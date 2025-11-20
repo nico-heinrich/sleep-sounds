@@ -1,12 +1,12 @@
 import { Text, ScrollView } from "react-native";
 import { Link } from "expo-router";
-import { Image } from "expo-image";
+import Animated from "react-native-reanimated";
 
 export default function Options() {
   return (
     <ScrollView>
       <Text style={{ marginTop: 100 }}>This is the options screen</Text>
-      <Image
+      <Animated.Image
         sharedTransitionTag="logo"
         source={{ uri: "https://reactnative.dev/img/tiny_logo.png" }}
         style={{ width: "100%", height: 200, marginTop: 20 }}
