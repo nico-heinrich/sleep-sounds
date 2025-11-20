@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 import { Link } from "expo-router";
-import Animated from "react-native-reanimated";
+import Button from "../components/ui/Button";
 
 export default function Index() {
   return (
@@ -12,11 +12,15 @@ export default function Index() {
       }}
     >
       <Text>Lesss gooooo</Text>
-      <Animated.Image
-        sharedTransitionTag="logo"
-        source={{ uri: "https://reactnative.dev/img/tiny_logo.png" }}
-        style={{ width: 64, height: 64, marginTop: 20 }}
-      />
+      <Button
+        variant="primary"
+        label="Press Me"
+        onPress={() => {
+          alert("Button Pressed!");
+        }}
+      >
+        <Text>🔥</Text>
+      </Button>
       <Link href="/options" style={{ marginTop: 20, fontSize: 18 }}>
         Go to Options
       </Link>
