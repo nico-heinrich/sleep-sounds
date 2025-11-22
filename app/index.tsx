@@ -13,7 +13,6 @@ export default function Index() {
         backgroundColor: "black",
       }}
     >
-      <Text>Lesss gooooo</Text>
       <View
         style={{
           flexDirection: "row",
@@ -41,17 +40,9 @@ export default function Index() {
           </Button>
         </View>
         <View>
-          <Button
-            label="Secondary Button"
-            onPress={() => {
-              alert("Secondary Button Pressed!");
-            }}
-          />
+          <Button label="Options" href="/options" />
         </View>
       </View>
-      <Link href="/options" style={{ marginTop: 20, fontSize: 18 }}>
-        Go to Options
-      </Link>
     </View>
   );
 }
