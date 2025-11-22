@@ -1,28 +1,22 @@
 import { Pressable, Text, Animated } from "react-native";
 import { BlurView } from "expo-blur";
 import { useRef } from "react";
-import { useRouter } from "expo-router";
-import type { RelativePathString } from "expo-router";
 
 export default function Button({
   small = false,
   label,
   children,
   onPress,
-  href,
 }: {
   small?: boolean;
   label?: string;
   icon?: React.ReactNode;
   children?: React.ReactNode;
   onPress?: () => void;
-  href?: RelativePathString;
 }) {
   const height = small ? 42 : 68;
   const padding = small ? 6 : 10;
   const fontSize = small ? 14 : 16;
-
-  const router = useRouter();
 
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -52,10 +46,7 @@ export default function Button({
       }}
     >
       <Pressable
-        onPress={() => {
-          if (href) router.push(href);
-          onPress?.();
-        }}
+        onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={{ height: "100%" }}
@@ -67,6 +58,7 @@ export default function Button({
             borderRadius: 9999,
             flexDirection: "row",
             alignItems: "center",
+            overflow: "hidden",
           }}
         >
           {children}

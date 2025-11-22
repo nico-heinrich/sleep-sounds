@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { Link } from "expo-router";
 import { Image } from "expo-image";
 import Button from "../components/ui/Button";
@@ -40,7 +40,9 @@ export default function Index() {
           </Button>
         </View>
         <View>
-          <Button label="Options" href="/options" />
+          <Link href="/options" asChild>
+            <Button label="Options" />
+          </Link>
         </View>
       </View>
     </View>
