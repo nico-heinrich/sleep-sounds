@@ -20,9 +20,17 @@ export default function Index() {
           marginTop: 400,
         }}
       >
+        <Button>
+          <View style={{ height: "100%", aspectRatio: 1, padding: 4 }}>
+            <Image
+              source="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSxPW899-uuRZrk7gesaoMWDCyzn1wnmaI9XWCplVzew&s"
+              style={{ height: "100%", width: "100%" }}
+            />
+          </View>
+        </Button>
         <View>
           <Link href="/options" asChild>
-            <Button label="Options" />
+            <Button label="Auswählen" />
           </Link>
         </View>
       </View>

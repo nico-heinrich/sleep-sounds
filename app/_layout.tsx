@@ -6,6 +6,7 @@ export default function RootLayout() {
       screenOptions={{
         headerShown: false,
         animation: "fade",
+        animationDuration: 300,
         gestureEnabled: false,
       }}
     />
