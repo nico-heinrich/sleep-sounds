@@ -1,6 +1,12 @@
-import { Pressable, Text, Animated } from "react-native";
+import { Pressable, Text } from "react-native";
 import { BlurView } from "expo-blur";
-import { useRef } from "react";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from "react-native-reanimated";
+import { useCallback } from "react";
 
 export default function Button({
   small = false,
@@ -10,7 +16,6 @@ export default function Button({
 }: {
   small?: boolean;
   label?: string;
-  icon?: React.ReactNode;
   children?: React.ReactNode;
   onPress?: () => void;
 }) {
@@ -18,35 +23,30 @@ export default function Button({
   const padding = small ? 6 : 8;
   const fontSize = small ? 14 : 16;
 
-  const scale = useRef(new Animated.Value(1)).current;
-  const backgroundColor = scale.interpolate({
-    inputRange: [0.95, 1],
-    outputRange: ["rgba(255,255,255,0.2)", "rgba(255,255,255,0.1)"],
-  });
+  const scale = useSharedValue(1);
 
-  const handlePressIn = () => {
-    Animated.spring(scale, {
-      toValue: 0.95,
-      useNativeDriver: true,
-      speed: 100,
-    }).start();
-  };
+  const scaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
-  const handlePressOut = () => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 50,
-    }).start();
-  };
+  const backgroundStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      scale.value,
+      [0.95, 1],
+      ["rgba(255,255,255,0.2)", "rgba(255,255,255,0.1)"],
+    ),
+  }));
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withTiming(0.95, { duration: 150 });
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withTiming(1, { duration: 300 });
+  }, []);
 
   return (
-    <Animated.View
-      style={{
-        transform: [{ scale }],
-        height,
-      }}
-    >
+    <Animated.View style={[{ height }, scaleStyle]}>
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
@@ -62,15 +62,17 @@ export default function Button({
           }}
         >
           <Animated.View
-            style={{
-              height: "100%",
-              padding,
-              borderRadius: 9999,
-              flexDirection: "row",
-              alignItems: "center",
-              overflow: "hidden",
-              backgroundColor,
-            }}
+            style={[
+              {
+                height: "100%",
+                padding,
+                borderRadius: 9999,
+                flexDirection: "row",
+                alignItems: "center",
+                overflow: "hidden",
+              },
+              backgroundStyle,
+            ]}
           >
             {children}
             {label && (

@@ -1,7 +1,9 @@
 import { View } from "react-native";
 import { Link } from "expo-router";
-import { Image } from "expo-image";
 import Button from "../components/ui/Button";
+import PlayIcon from "../components/icons/PlayIcon";
+import Carousel from "../components/Carousel";
+
 export default function Index() {
   return (
     <View
@@ -12,20 +14,25 @@ export default function Index() {
         backgroundColor: "black",
       }}
     >
-      <View style={{ width: 300, height: 100, backgroundColor: "blue" }} />
+      <Carousel />
       <View
         style={{
+          position: "absolute",
+          bottom: 50,
           flexDirection: "row",
           gap: 10,
-          marginTop: 400,
         }}
       >
         <Button>
-          <View style={{ height: "100%", aspectRatio: 1, padding: 4 }}>
-            <Image
-              source="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSxPW899-uuRZrk7gesaoMWDCyzn1wnmaI9XWCplVzew&s"
-              style={{ height: "100%", width: "100%" }}
-            />
+          <View
+            style={{
+              height: "100%",
+              aspectRatio: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <PlayIcon size={24} />
           </View>
         </Button>
         <View>
