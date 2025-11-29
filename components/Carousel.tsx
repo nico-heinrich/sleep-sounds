@@ -85,29 +85,37 @@ export default function Carousel() {
     bodyAppearance[0].value = withDelay(100, withTiming(1, { duration: 600 }));
   }, []);
 
-  // React to index changes and trigger staggered appearance animations
+  // React to index changes and trigger fade out then fade in animations
   useAnimatedReaction(
     () => currentIndex.value,
     (currentIdx, previousIdx) => {
       if (previousIdx !== null && currentIdx !== previousIdx) {
-        // Reset all appearances instantly (without animation)
+        // Fade out the previous item
+        if (previousIdx >= 0 && previousIdx < sets.length) {
+          headingAppearance[previousIdx].value = withTiming(0, {
+            duration: 300,
+          });
+          bodyAppearance[previousIdx].value = withTiming(0, {
+            duration: 300,
+          });
+        }
+
+        // Reset all other appearances instantly
         sets.forEach((_, idx) => {
-          if (idx !== currentIdx) {
+          if (idx !== currentIdx && idx !== previousIdx) {
             headingAppearance[idx].value = 0;
             bodyAppearance[idx].value = 0;
           }
         });
 
-        // Trigger staggered appearance for the new active item
+        // Fade in the new active item with delay
         if (currentIdx >= 0 && currentIdx < sets.length) {
-          // Reset current item first, then animate in
-          headingAppearance[currentIdx].value = 0;
-          bodyAppearance[currentIdx].value = 0;
-          headingAppearance[currentIdx].value = withTiming(1, {
-            duration: 600,
-          });
-          bodyAppearance[currentIdx].value = withDelay(
+          headingAppearance[currentIdx].value = withDelay(
             200,
+            withTiming(1, { duration: 600 }),
+          );
+          bodyAppearance[currentIdx].value = withDelay(
+            300,
             withTiming(1, { duration: 600 }),
           );
         }
@@ -209,56 +217,26 @@ export default function Carousel() {
           }}
         >
           {sets.map((item, index) => {
-            const ITEM_FULL_SCROLL = ITEM_WIDTH + ITEM_GAP; // the scroll distance for one item
-
-            const inputRange = [
-              (index - 0.5) * ITEM_FULL_SCROLL, // start fade in
-              index * ITEM_FULL_SCROLL, // fully visible at center
-              (index + 0.5) * ITEM_FULL_SCROLL, // fade out
-            ];
-
-            const outputRange = [0, 1, 0];
-
-            // Scroll-based opacity (synchronous fade in/out with swipe)
-            const scrollOpacity = useAnimatedStyle(() => {
-              const opacity = interpolate(
-                scrollX.value,
-                inputRange,
-                outputRange,
-                "clamp",
-              );
-              return { opacity };
-            });
-
-            // Heading opacity: combines scroll opacity with appearance animation
+            // Heading opacity: only uses appearance animation
             const headingOpacity = useAnimatedStyle(() => {
-              const opacity =
-                interpolate(scrollX.value, inputRange, outputRange, "clamp") *
-                headingAppearance[index].value;
-              return { opacity };
+              return { opacity: headingAppearance[index].value };
             });
 
-            // Body opacity: combines scroll opacity with appearance animation
+            // Body opacity: only uses appearance animation
             const bodyOpacity = useAnimatedStyle(() => {
-              const opacity =
-                interpolate(scrollX.value, inputRange, outputRange, "clamp") *
-                bodyAppearance[index].value;
-              return { opacity };
+              return { opacity: bodyAppearance[index].value };
             });
 
             return (
               <Animated.View
                 key={item.id}
-                style={[
-                  {
-                    position: "absolute",
-                    top: 430,
-                    left: 0,
-                    right: 0,
-                    paddingHorizontal: 24,
-                  },
-                  scrollOpacity,
-                ]}
+                style={{
+                  position: "absolute",
+                  top: 430,
+                  left: 0,
+                  right: 0,
+                  paddingHorizontal: 24,
+                }}
                 pointerEvents="none"
               >
                 <Animated.Text
