@@ -2,7 +2,11 @@ export const sets = [
   {
     id: "01",
     heading: "Dusty Rain",
-    body: "A collection inspired by the gentle patter of rain on dusty streets.",
+    body: `A nostalgic collection evoking memories of rainy days.
+Some more text to test multiline display of the body text in the app.
+
+This should be enough to create a paragraph effect.
+One last sentence to finish off the description nicely.`,
     image: require("../assets/sets/images/01.png"),
     audio: require("../assets/sets/audio/01.wav"),
     video: require("../assets/sets/video/01.mp4"),
@@ -10,7 +14,9 @@ export const sets = [
   {
     id: "02",
     heading: "Morning Breeze",
-    body: "Experience the refreshing sensation of a cool morning breeze.",
+    body: `Experience the freshness of a new day with this uplifting set.
+Feel the gentle breeze and the warmth of the morning sun through these visuals and sounds.
+Let this collection inspire positivity and energy for the day ahead.`,
     image: require("../assets/sets/images/02.png"),
     audio: require("../assets/sets/audio/02.wav"),
     video: require("../assets/sets/video/02.mp4"),
@@ -18,7 +24,11 @@ export const sets = [
   {
     id: "03",
     heading: "City Lights",
-    body: "A vibrant collection capturing the essence of city nightlife.",
+    body: `Dive into the vibrant energy of the city at night.
+The dazzling lights and bustling sounds create an immersive urban experience.
+Perfect for those who love the dynamic atmosphere of city life.
+
+Enjoy the rhythm and pulse of the metropolis through this captivating set.`,
     image: require("../assets/sets/images/03.png"),
     audio: require("../assets/sets/audio/03.wav"),
     video: require("../assets/sets/video/03.mp4"),
@@ -26,7 +36,9 @@ export const sets = [
   {
     id: "04",
     heading: "Forest Whisper",
-    body: "Immerse yourself in the tranquil sounds and sights of the forest.",
+    body: `Connect with nature through this serene collection.
+The gentle rustling of leaves and the soft glow of sunlight filtering through the trees create a peaceful ambiance.
+Ideal for relaxation and mindfulness, this set invites you to unwind and rejuvenate amidst the tranquility of the forest.`,
     image: require("../assets/sets/images/04.png"),
     audio: require("../assets/sets/audio/04.wav"),
     video: require("../assets/sets/video/04.mp4"),
