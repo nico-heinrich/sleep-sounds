@@ -1,18 +1,23 @@
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { Dimensions, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Dimensions, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
+  runOnJS,
   useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withTiming,
+  withTiming
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { scheduleOnRN } from "react-native-worklets";
+import { useSound } from "../contexts/SoundContext";
 import { sets } from "../data/sets";
+import PlayIndicator from "./PlayIndicator";
+import PlayToggle from "./PlayToggle";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const ITEM_WIDTH = SCREEN_WIDTH * 0.6;
@@ -24,7 +29,27 @@ const FADE_IN_DURATION = 1000;
 const HEADING_DELAY = 200;
 const BODY_DELAY = 400;
 
-function CarouselItem({ item, index, scrollX }: any) {
+function CarouselItem({
+  item,
+  index,
+  scrollX,
+  soundId,
+  playSound,
+  togglePlay,
+  currentSoundId,
+  isPlaying,
+  currentIndex,
+}: {
+  item: any;
+  index: number;
+  scrollX: any;
+  soundId: string;
+  playSound: (id: string) => Promise<void>;
+  togglePlay: () => void;
+  currentSoundId: string | null;
+  isPlaying: boolean;
+  currentIndex: number;
+}) {
   const inputRange = [
     (index - 1) * ITEM_SIZE,
     index * ITEM_SIZE,
@@ -43,6 +68,17 @@ function CarouselItem({ item, index, scrollX }: any) {
     };
   });
 
+  const isCurrentItem = index === currentIndex;
+  const itemIsPlaying = isPlaying && currentSoundId === soundId && isCurrentItem;
+
+  const handlePress = async () => {
+    if (currentSoundId === soundId) {
+      togglePlay();
+    } else {
+      await playSound(soundId);
+    }
+  };
+
   return (
     <Animated.View
       style={[
@@ -50,21 +86,35 @@ function CarouselItem({ item, index, scrollX }: any) {
         { marginEnd: index === sets.length - 1 ? 0 : ITEM_GAP },
       ]}
     >
-      <Image
-        source={item.image}
-        contentFit="cover"
-        style={{
-          width: ITEM_WIDTH,
-          height: 320,
-          borderRadius: 48,
-        }}
-      />
+      <Pressable onPress={handlePress} style={{ position: "relative" }}>
+        <Image
+          source={item.image}
+          contentFit="cover"
+          style={{
+            width: ITEM_WIDTH,
+            height: 320,
+            borderRadius: 48,
+          }}
+        />
+        <View style={{ position: "absolute", bottom: 24, left: 24 }}>
+          <PlayToggle
+            small
+            isPlaying={itemIsPlaying}
+            onPress={handlePress}
+          />
+        </View>
+        <View style={{ position: "absolute", bottom: 24, right: 24 }}>
+          <PlayIndicator isPlaying={itemIsPlaying} />
+        </View>
+      </Pressable>
     </Animated.View>
   );
 }
 
 export default function Carousel() {
   const safeArea = useSafeAreaInsets();
+  const { currentSoundId, isPlaying, playSound, togglePlay } = useSound();
+  const [currentIndexState, setCurrentIndexState] = useState(0);
 
   const dataWithSpacers = [
     { id: "left-spacer" },
@@ -85,6 +135,26 @@ export default function Carousel() {
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  // Sync currentIndex shared value to state for use in React components
+  useAnimatedReaction(
+    () => currentIndex.value,
+    (currentIdx) => {
+      if (currentIdx >= 0 && currentIdx < sets.length) {
+        runOnJS(setCurrentIndexState)(currentIdx);
+      }
+    },
+  );
+
+  // Auto-switch sound when carousel index changes and isPlaying is true
+  useEffect(() => {
+    if (isPlaying && currentIndexState >= 0 && currentIndexState < sets.length) {
+      const newSoundId = sets[currentIndexState].id;
+      if (currentSoundId !== newSoundId) {
+        playSound(newSoundId);
+      }
+    }
+  }, [currentIndexState, isPlaying, currentSoundId, playSound]);
 
   useAnimatedReaction(
     () => currentIndex.value,
@@ -194,6 +264,12 @@ export default function Carousel() {
                 item={item}
                 index={adjustedIndex}
                 scrollX={scrollX}
+                soundId={item.id}
+                playSound={playSound}
+                togglePlay={togglePlay}
+                currentSoundId={currentSoundId}
+                isPlaying={isPlaying}
+                currentIndex={currentIndexState}
               />
             );
           }}

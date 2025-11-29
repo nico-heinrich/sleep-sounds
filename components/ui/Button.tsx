@@ -20,7 +20,7 @@ export default function Button({
   children?: React.ReactNode;
   onPress?: () => void;
 }) {
-  const height = small ? 42 : 64;
+  const height = small ? 36 : 64;
   const padding = small ? 6 : 8;
   const fontSize = small ? 14 : 16;
 

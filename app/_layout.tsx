@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { SoundProvider } from "../contexts/SoundContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,7 +24,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <SoundProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -33,6 +34,6 @@ export default function RootLayout() {
           gestureEnabled: false,
         }}
       />
-    </>
+    </SoundProvider>
   );
 }
