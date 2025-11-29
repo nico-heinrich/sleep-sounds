@@ -175,7 +175,7 @@ export default function Carousel() {
           horizontal
           showsHorizontalScrollIndicator={false}
           snapToAlignment="start"
-          decelerationRate={0.5}
+          decelerationRate={0.1}
           disableIntervalMomentum={true}
           snapToInterval={ITEM_SIZE}
           contentContainerStyle={{ paddingTop: safeArea.top + 20 }}
@@ -218,7 +218,7 @@ export default function Carousel() {
             }));
 
             return (
-              <Animated.View
+              <View
                 key={item.id}
                 style={{
                   position: "absolute",
@@ -234,7 +234,7 @@ export default function Carousel() {
                     {
                       color: "white",
                       fontSize: 32,
-                      fontWeight: 600,
+                      fontFamily: "Satoshi-Bold",
                       textAlign: "center",
                     },
                     headingOpacity,
@@ -247,8 +247,9 @@ export default function Carousel() {
                     {
                       color: "white",
                       fontSize: 18,
+                      fontFamily: "Satoshi-Regular",
                       textAlign: "center",
-                      marginTop: 12,
+                      marginTop: 16,
                       marginBottom: safeArea.bottom + 120,
                       opacity: 0.8,
                     },
@@ -257,7 +258,7 @@ export default function Carousel() {
                 >
                   {item.body || ""}
                 </Animated.Text>
-              </Animated.View>
+              </View>
             );
           })}
         </View>

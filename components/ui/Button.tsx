@@ -7,6 +7,7 @@ import Animated, {
   interpolateColor,
 } from "react-native-reanimated";
 import { useCallback } from "react";
+import { FONT_FAMILY } from "../../theme";
 
 export default function Button({
   small = false,
@@ -81,7 +82,7 @@ export default function Button({
                   color: "white",
                   textAlign: "center",
                   fontSize,
-                  fontWeight: "600",
+                  fontFamily: "Satoshi-Bold",
                   paddingStart: children ? padding * 1.25 : padding * 2,
                   paddingEnd: padding * 2,
                 }}
