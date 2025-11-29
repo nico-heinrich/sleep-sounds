@@ -10,7 +10,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withTiming
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { scheduleOnRN } from "react-native-worklets";
@@ -38,6 +38,7 @@ function CarouselItem({
   togglePlay,
   currentSoundId,
   isPlaying,
+  isFadingOut,
   currentIndex,
 }: {
   item: any;
@@ -48,6 +49,7 @@ function CarouselItem({
   togglePlay: () => void;
   currentSoundId: string | null;
   isPlaying: boolean;
+  isFadingOut: boolean;
   currentIndex: number;
 }) {
   const inputRange = [
@@ -69,9 +71,13 @@ function CarouselItem({
   });
 
   const isCurrentItem = index === currentIndex;
-  const itemIsPlaying = isPlaying && currentSoundId === soundId && isCurrentItem;
+  const itemIsPlaying =
+    isPlaying && currentSoundId === soundId && isCurrentItem;
 
-  const handlePress = async () => {
+  const handleTogglePlay = async () => {
+    if (isFadingOut && currentSoundId === soundId) {
+      return;
+    }
     if (currentSoundId === soundId) {
       togglePlay();
     } else {
@@ -86,7 +92,7 @@ function CarouselItem({
         { marginEnd: index === sets.length - 1 ? 0 : ITEM_GAP },
       ]}
     >
-      <Pressable onPress={handlePress} style={{ position: "relative" }}>
+      <Pressable onPress={handleTogglePlay} style={{ position: "relative" }}>
         <Image
           source={item.image}
           contentFit="cover"
@@ -100,11 +106,15 @@ function CarouselItem({
           <PlayToggle
             small
             isPlaying={itemIsPlaying}
-            onPress={handlePress}
+            onPress={handleTogglePlay}
+            isFadingOut={isFadingOut && currentSoundId === soundId}
           />
         </View>
         <View style={{ position: "absolute", bottom: 24, right: 24 }}>
-          <PlayIndicator isPlaying={itemIsPlaying} />
+          <PlayIndicator
+            isPlaying={itemIsPlaying}
+            isFadingOut={isFadingOut && currentSoundId === soundId}
+          />
         </View>
       </Pressable>
     </Animated.View>
@@ -113,7 +123,8 @@ function CarouselItem({
 
 export default function Carousel() {
   const safeArea = useSafeAreaInsets();
-  const { currentSoundId, isPlaying, playSound, togglePlay } = useSound();
+  const { currentSoundId, isPlaying, isFadingOut, playSound, togglePlay } =
+    useSound();
   const [currentIndexState, setCurrentIndexState] = useState(0);
 
   const dataWithSpacers = [
@@ -148,7 +159,11 @@ export default function Carousel() {
 
   // Auto-switch sound when carousel index changes and isPlaying is true
   useEffect(() => {
-    if (isPlaying && currentIndexState >= 0 && currentIndexState < sets.length) {
+    if (
+      isPlaying &&
+      currentIndexState >= 0 &&
+      currentIndexState < sets.length
+    ) {
       const newSoundId = sets[currentIndexState].id;
       if (currentSoundId !== newSoundId) {
         playSound(newSoundId);
@@ -269,6 +284,7 @@ export default function Carousel() {
                 togglePlay={togglePlay}
                 currentSoundId={currentSoundId}
                 isPlaying={isPlaying}
+                isFadingOut={isFadingOut}
                 currentIndex={currentIndexState}
               />
             );

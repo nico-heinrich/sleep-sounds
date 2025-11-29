@@ -1,4 +1,4 @@
-import { Pressable, Text } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
 import Animated, {
   useSharedValue,
@@ -7,18 +7,19 @@ import Animated, {
   interpolateColor,
 } from "react-native-reanimated";
 import { useCallback } from "react";
-import { FONT_FAMILY } from "../../theme";
 
 export default function Button({
   small = false,
   label,
   children,
+  disabled = false,
   onPress,
 }: {
   small?: boolean;
   label?: string;
   children?: React.ReactNode;
   onPress?: () => void;
+  disabled?: boolean;
 }) {
   const height = small ? 36 : 64;
   const padding = small ? 6 : 8;
@@ -53,6 +54,7 @@ export default function Button({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={{ height: "100%" }}
+        disabled={disabled}
       >
         <BlurView
           intensity={40}
@@ -68,28 +70,35 @@ export default function Button({
                 height: "100%",
                 padding,
                 borderRadius: 9999,
-                flexDirection: "row",
-                alignItems: "center",
                 overflow: "hidden",
               },
               backgroundStyle,
             ]}
           >
-            {children}
-            {label && (
-              <Text
-                style={{
-                  color: "white",
-                  textAlign: "center",
-                  fontSize,
-                  fontFamily: "Satoshi-Bold",
-                  paddingStart: children ? padding * 1.25 : padding * 2,
-                  paddingEnd: padding * 2,
-                }}
-              >
-                {label}
-              </Text>
-            )}
+            <View
+              style={{
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                opacity: disabled ? 0.5 : 1,
+              }}
+            >
+              {children}
+              {label && (
+                <Text
+                  style={{
+                    color: "white",
+                    textAlign: "center",
+                    fontSize,
+                    fontFamily: "Satoshi-Bold",
+                    paddingStart: children ? padding * 1.25 : padding * 2,
+                    paddingEnd: padding * 2,
+                  }}
+                >
+                  {label}
+                </Text>
+              )}
+            </View>
           </Animated.View>
         </BlurView>
       </Pressable>

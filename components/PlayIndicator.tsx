@@ -7,7 +7,7 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from "react-native-reanimated";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Svg, { Rect } from "react-native-svg";
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -72,12 +72,31 @@ function AnimatedBar({
   );
 }
 
-export default function PlayIndicator({ isPlaying }: { isPlaying: boolean }) {
-  const opacity = useSharedValue(isPlaying ? 1 : 0);
+export default function PlayIndicator({
+  isPlaying,
+  isFadingOut,
+}: {
+  isPlaying: boolean;
+  isFadingOut?: boolean;
+}) {
+  const opacity = useSharedValue(isPlaying ? 0.5 : 0);
+  const prevIsPlayingRef = useRef<boolean>(isPlaying);
 
   useEffect(() => {
-    opacity.value = withTiming(isPlaying ? 1 : 0, { duration: 200 });
-  }, [isPlaying]);
+    // Detect abrupt change: was playing, now stopped, but isFadingOut is false
+    // This means the sound was switched abruptly without fade out
+    const isAbruptChange =
+      prevIsPlayingRef.current && !isPlaying && !isFadingOut;
+
+    const fadeOutDuration = isAbruptChange ? 100 : 1000;
+    const fadeInDuration = 1000;
+
+    const duration = isPlaying ? fadeInDuration : fadeOutDuration;
+
+    opacity.value = withTiming(isPlaying ? 0.5 : 0, { duration });
+
+    prevIsPlayingRef.current = isPlaying;
+  }, [isPlaying, isFadingOut]);
 
   const svgProps = useAnimatedProps(() => ({
     opacity: opacity.value,

@@ -3,12 +3,20 @@ import {
   setAudioModeAsync,
   type AudioPlayer,
 } from "expo-audio";
-import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { sets } from "../data/sets";
 
 interface SoundContextType {
   currentSoundId: string | null;
   isPlaying: boolean;
+  isFadingOut: boolean;
   playSound: (soundId: string) => Promise<void>;
   pauseSound: () => void;
   togglePlay: () => void;
@@ -17,8 +25,12 @@ interface SoundContextType {
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: ReactNode }) {
+  const fadeInDuration = 2000;
+  const fadeOutDuration = 1000;
+
   const [currentSoundId, setCurrentSoundId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
   const soundRef = useRef<AudioPlayer | null>(null);
   const nextSoundRef = useRef<AudioPlayer | null>(null);
   const durationRef = useRef<number | null>(null);
@@ -26,7 +38,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const isPlayingRef = useRef<boolean>(false);
   const isCrossfadingRef = useRef<boolean>(false);
   const activeFadeIntervalsRef = useRef<Set<NodeJS.Timeout>>(new Set());
-  const positionCheckIntervalsRef = useRef<Map<AudioPlayer, NodeJS.Timeout>>(new Map());
+  const positionCheckIntervalsRef = useRef<Map<AudioPlayer, NodeJS.Timeout>>(
+    new Map(),
+  );
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -54,7 +68,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     player: AudioPlayer,
     fromVolume: number,
     toVolume: number,
-    duration: number
+    duration: number,
   ): Promise<void> => {
     return new Promise((resolve) => {
       const steps = 60;
@@ -77,7 +91,10 @@ export function SoundProvider({ children }: { children: ReactNode }) {
           }
 
           currentStep++;
-          const volume = Math.max(0, Math.min(1.0, fromVolume + volumeStep * currentStep));
+          const volume = Math.max(
+            0,
+            Math.min(1.0, fromVolume + volumeStep * currentStep),
+          );
 
           // Set volume directly (synchronous in expo-audio)
           player.volume = volume;
@@ -108,7 +125,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const setupSeamlessLoop = (
     currentSound: AudioPlayer,
     soundData: any,
-    soundId: string
+    soundId: string,
   ) => {
     if (!durationRef.current) return;
 
@@ -116,7 +133,8 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     const crossfadeStartTime = duration - 1000; // Start crossfade 1 second before end
 
     // Remove any existing interval for this player
-    const existingInterval = positionCheckIntervalsRef.current.get(currentSound);
+    const existingInterval =
+      positionCheckIntervalsRef.current.get(currentSound);
     if (existingInterval) {
       clearInterval(existingInterval);
     }
@@ -146,8 +164,8 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       // If position isn't advancing and we're supposed to be playing, restart
       // But only if we're not crossfading and position has been stable for a bit
       if (
-        position === prevPosition && 
-        position > 100 && 
+        position === prevPosition &&
+        position > 100 &&
         isPlayingRef.current &&
         !isCrossfadingRef.current &&
         !nextSoundRef.current
@@ -192,11 +210,13 @@ export function SoundProvider({ children }: { children: ReactNode }) {
               crossfadeSounds(currentSound, nextSound, soundData, soundId);
             }
           }, 50);
-          
+
           setTimeout(() => {
             clearInterval(waitForLoad);
             if (!nextSoundLoaded && !nextSound.isLoaded) {
-              console.error(`Next sound for crossfade failed to load within timeout (2s). Sound ID: ${soundId}`);
+              console.error(
+                `Next sound for crossfade failed to load within timeout (2s). Sound ID: ${soundId}`,
+              );
               try {
                 nextSound.remove();
               } catch (error) {
@@ -214,7 +234,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       }
 
       // Also check if sound finished (fallback)
-      if (currentSound.duration > 0 && currentTime >= currentSound.duration - 0.05 && !nextSoundRef.current) {
+      if (
+        currentSound.duration > 0 &&
+        currentTime >= currentSound.duration - 0.05 &&
+        !nextSoundRef.current
+      ) {
         clearInterval(positionCheckInterval);
         positionCheckIntervalsRef.current.delete(currentSound);
         // Sound finished but we didn't crossfade - create next instance immediately
@@ -237,7 +261,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
             if (soundRef.current?.isLoaded && soundRef.current.duration > 0) {
               clearInterval(waitForDuration);
               durationRef.current = soundRef.current.duration * 1000;
-              if (soundRef.current && isPlayingRef.current && currentSoundIdRef.current === soundId) {
+              if (
+                soundRef.current &&
+                isPlayingRef.current &&
+                currentSoundIdRef.current === soundId
+              ) {
                 setupSeamlessLoop(soundRef.current, soundData, soundId);
               }
             }
@@ -257,7 +285,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     currentSound: AudioPlayer,
     nextSound: AudioPlayer,
     soundData: any,
-    soundId: string
+    soundId: string,
   ) => {
     if (isCrossfadingRef.current) return;
     isCrossfadingRef.current = true;
@@ -277,7 +305,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         setTimeout(() => {
           clearInterval(waitForLoad);
           if (!crossfadeSoundLoaded && !nextSound.isLoaded) {
-            console.error("Next sound for crossfade failed to load within timeout (2s)");
+            console.error(
+              "Next sound for crossfade failed to load within timeout (2s)",
+            );
             // Don't proceed with crossfade if sound didn't load
             isCrossfadingRef.current = false;
           }
@@ -296,15 +326,21 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
       // Fade out current and fade in next simultaneously
       await Promise.all([
-        fadeSound(currentSound, currentSound.volume, 0.0, 1000).catch(() => {}),
-        fadeSound(nextSound, nextVolume, 1.0, 1000).catch(() => {}),
+        fadeSound(
+          currentSound,
+          currentSound.volume,
+          0.0,
+          fadeOutDuration,
+        ).catch(() => {}),
+        fadeSound(nextSound, nextVolume, 1.0, fadeInDuration).catch(() => {}),
       ]);
 
       // Crossfade complete - only proceed if we're still supposed to be playing
       if (isPlayingRef.current && currentSoundIdRef.current === soundId) {
         try {
           // Remove old player
-          const oldInterval = positionCheckIntervalsRef.current.get(currentSound);
+          const oldInterval =
+            positionCheckIntervalsRef.current.get(currentSound);
           if (oldInterval) {
             clearInterval(oldInterval);
             positionCheckIntervalsRef.current.delete(currentSound);
@@ -321,7 +357,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
         // Update duration and set up loop for the new current sound
         const newCurrentSound = soundRef.current;
-        if (newCurrentSound && isPlayingRef.current && currentSoundIdRef.current === soundId) {
+        if (
+          newCurrentSound &&
+          isPlayingRef.current &&
+          currentSoundIdRef.current === soundId
+        ) {
           // Ensure the sound is playing - it should already be playing from crossfade
           try {
             const newStatus = newCurrentSound.currentStatus;
@@ -345,9 +385,13 @@ export function SoundProvider({ children }: { children: ReactNode }) {
               if (newCurrentSound.isLoaded && newCurrentSound.duration > 0) {
                 clearInterval(waitForDuration);
                 durationRef.current = newCurrentSound.duration * 1000;
-                
+
                 // Set up next loop for the new current sound
-                if (soundRef.current === newCurrentSound && isPlayingRef.current && currentSoundIdRef.current === soundId) {
+                if (
+                  soundRef.current === newCurrentSound &&
+                  isPlayingRef.current &&
+                  currentSoundIdRef.current === soundId
+                ) {
                   setupSeamlessLoop(newCurrentSound, soundData, soundId);
                 }
               }
@@ -358,7 +402,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
               clearInterval(waitForDuration);
               if (newCurrentSound.isLoaded && newCurrentSound.duration > 0) {
                 durationRef.current = newCurrentSound.duration * 1000;
-                if (soundRef.current === newCurrentSound && isPlayingRef.current && currentSoundIdRef.current === soundId) {
+                if (
+                  soundRef.current === newCurrentSound &&
+                  isPlayingRef.current &&
+                  currentSoundIdRef.current === soundId
+                ) {
                   setupSeamlessLoop(newCurrentSound, soundData, soundId);
                 }
               }
@@ -377,43 +425,45 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
   const playSound = async (soundId: string) => {
     try {
-      // Clear all active fade intervals
-      activeFadeIntervalsRef.current.forEach((interval) => {
-        clearInterval(interval);
-      });
-      activeFadeIntervalsRef.current.clear();
-
-      // If switching sounds, fade out current first (250ms)
+      // If switching sounds, stop current immediately
       if (soundRef.current && currentSoundId !== soundId) {
         try {
-          const currentVolume = soundRef.current.volume;
-          await fadeSound(soundRef.current, currentVolume, 0.0, 250);
-          const oldInterval = positionCheckIntervalsRef.current.get(soundRef.current);
-          if (oldInterval) {
-            clearInterval(oldInterval);
+          // Stop any active crossfade
+          isCrossfadingRef.current = false;
+
+          // Clear all active fade intervals
+          activeFadeIntervalsRef.current.forEach((interval) => {
+            clearInterval(interval);
+          });
+          activeFadeIntervalsRef.current.clear();
+
+          // Stop and remove nextSound if it exists (from crossfade)
+          if (nextSoundRef.current) {
+            const nextInterval = positionCheckIntervalsRef.current.get(
+              nextSoundRef.current,
+            );
+            if (nextInterval) {
+              clearInterval(nextInterval);
+              positionCheckIntervalsRef.current.delete(nextSoundRef.current);
+            }
+            nextSoundRef.current.remove();
+            nextSoundRef.current = null;
+          }
+
+          // Set volume to 0 and remove current sound
+          soundRef.current.volume = 0.0;
+          const currentInterval = positionCheckIntervalsRef.current.get(
+            soundRef.current,
+          );
+          if (currentInterval) {
+            clearInterval(currentInterval);
             positionCheckIntervalsRef.current.delete(soundRef.current);
           }
           soundRef.current.remove();
+          soundRef.current = null;
         } catch (error) {
           // Ignore errors
         }
-        soundRef.current = null;
-      }
-
-      // Clear any active crossfade
-      isCrossfadingRef.current = false;
-      if (nextSoundRef.current) {
-        try {
-          const oldInterval = positionCheckIntervalsRef.current.get(nextSoundRef.current);
-          if (oldInterval) {
-            clearInterval(oldInterval);
-            positionCheckIntervalsRef.current.delete(nextSoundRef.current);
-          }
-          nextSoundRef.current.remove();
-        } catch (error) {
-          // Ignore errors
-        }
-        nextSoundRef.current = null;
       }
 
       // If already playing the same sound, do nothing
@@ -449,10 +499,14 @@ export function SoundProvider({ children }: { children: ReactNode }) {
           setCurrentSoundId(soundId);
           setIsPlaying(true);
 
-          // Fade in the sound (500ms)
-          fadeSound(sound, 0.0, 1.0, 500).then(() => {
+          // Fade in the sound
+          fadeSound(sound, 0.0, 1.0, fadeInDuration).then(() => {
             // Set up seamless looping after fade in completes
-            if (soundRef.current === sound && isPlayingRef.current && currentSoundIdRef.current === soundId) {
+            if (
+              soundRef.current === sound &&
+              isPlayingRef.current &&
+              currentSoundIdRef.current === soundId
+            ) {
               setupSeamlessLoop(sound, soundData, soundId);
             }
           });
@@ -463,14 +517,19 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         clearInterval(checkLoaded);
         if (!soundLoaded && !sound.isLoaded) {
-          console.error(`Sound "${soundId}" failed to load within timeout (5s). Audio source may be invalid or network unavailable.`);
+          console.error(
+            `Sound "${soundId}" failed to load within timeout (5s). Audio source may be invalid or network unavailable.`,
+          );
           try {
             sound.remove();
           } catch (error) {
             // Ignore errors if already removed
           }
           // Reset state if this was the sound we were trying to play
-          if (soundRef.current === sound || (!soundRef.current && currentSoundId === soundId)) {
+          if (
+            soundRef.current === sound ||
+            (!soundRef.current && currentSoundId === soundId)
+          ) {
             soundRef.current = null;
             if (currentSoundId === soundId) {
               setCurrentSoundId(null);
@@ -486,6 +545,10 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
   const pauseSound = async () => {
     try {
+      // Update UI immediately for responsive feel
+      setIsPlaying(false);
+      setIsFadingOut(true);
+
       // Clear any active crossfade
       isCrossfadingRef.current = false;
 
@@ -501,35 +564,39 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       });
       activeFadeIntervalsRef.current.clear();
 
-      // Fade out and pause both instances (500ms)
+      // Fade out and pause both instances
       const fadePromises = [];
       if (soundRef.current) {
         const currentVolume = soundRef.current.volume;
         fadePromises.push(
-          fadeSound(soundRef.current, currentVolume, 0.0, 500).then(() => {
-            try {
-              soundRef.current?.pause();
-            } catch (error) {
-              // Ignore errors
-            }
-          }).catch(() => {})
+          fadeSound(soundRef.current, currentVolume, 0.0, fadeOutDuration)
+            .then(() => {
+              try {
+                soundRef.current?.pause();
+              } catch (error) {
+                // Ignore errors
+              }
+            })
+            .catch(() => {}),
         );
       }
       if (nextSoundRef.current) {
         const nextVolume = nextSoundRef.current.volume;
         fadePromises.push(
-          fadeSound(nextSoundRef.current, nextVolume, 0.0, 500).then(() => {
-            try {
-              nextSoundRef.current?.pause();
-            } catch (error) {
-              // Ignore errors
-            }
-          }).catch(() => {})
+          fadeSound(nextSoundRef.current, nextVolume, 0.0, fadeOutDuration)
+            .then(() => {
+              try {
+                nextSoundRef.current?.pause();
+              } catch (error) {
+                // Ignore errors
+              }
+            })
+            .catch(() => {}),
         );
       }
 
       await Promise.all(fadePromises);
-      setIsPlaying(false);
+      setIsFadingOut(false);
 
       // Clean up after fade
       if (soundRef.current) {
@@ -543,6 +610,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error pausing sound:", error);
       setIsPlaying(false);
+      setIsFadingOut(false);
     }
   };
 
@@ -583,6 +651,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       value={{
         currentSoundId,
         isPlaying,
+        isFadingOut,
         playSound,
         pauseSound,
         togglePlay,
