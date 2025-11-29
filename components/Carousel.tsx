@@ -1,12 +1,18 @@
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { Dimensions, StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { scheduleOnRN } from "react-native-worklets";
 import { sets } from "../data/sets";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -63,10 +69,69 @@ export default function Carousel() {
   ];
 
   const scrollX = useSharedValue(0);
+  const currentIndex = useSharedValue(0);
+
+  // Create appearance opacity values for each item's heading and body
+  const headingAppearance = sets.map(() => useSharedValue(0));
+  const bodyAppearance = sets.map(() => useSharedValue(0));
+
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  // Initialize first item on mount
+  useEffect(() => {
+    headingAppearance[0].value = withTiming(1, { duration: 600 });
+    bodyAppearance[0].value = withDelay(100, withTiming(1, { duration: 600 }));
+  }, []);
+
+  // React to index changes and trigger staggered appearance animations
+  useAnimatedReaction(
+    () => currentIndex.value,
+    (currentIdx, previousIdx) => {
+      if (previousIdx !== null && currentIdx !== previousIdx) {
+        // Reset all appearances instantly (without animation)
+        sets.forEach((_, idx) => {
+          if (idx !== currentIdx) {
+            headingAppearance[idx].value = 0;
+            bodyAppearance[idx].value = 0;
+          }
+        });
+
+        // Trigger staggered appearance for the new active item
+        if (currentIdx >= 0 && currentIdx < sets.length) {
+          // Reset current item first, then animate in
+          headingAppearance[currentIdx].value = 0;
+          bodyAppearance[currentIdx].value = 0;
+          headingAppearance[currentIdx].value = withTiming(1, {
+            duration: 600,
+          });
+          bodyAppearance[currentIdx].value = withDelay(
+            200,
+            withTiming(1, { duration: 600 }),
+          );
+        }
+      }
+    },
+  );
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
+
+      // Calculate current index based on scroll position
+      const itemWidth = ITEM_WIDTH + ITEM_GAP;
+      const newIndex = Math.round(event.contentOffset.x / itemWidth);
+
+      // Trigger haptic feedback when index changes
+      if (
+        newIndex !== currentIndex.value &&
+        newIndex >= 0 &&
+        newIndex < sets.length
+      ) {
+        currentIndex.value = newIndex;
+        scheduleOnRN(triggerHaptic);
+      }
     },
   });
 
@@ -110,7 +175,8 @@ export default function Carousel() {
           horizontal
           showsHorizontalScrollIndicator={false}
           snapToAlignment="start"
-          decelerationRate="fast"
+          decelerationRate={0.5}
+          disableIntervalMomentum={true}
           snapToInterval={ITEM_WIDTH + ITEM_GAP}
           contentContainerStyle={{ paddingTop: safeArea.top + 20 }}
           onScroll={scrollHandler}
@@ -153,13 +219,30 @@ export default function Carousel() {
 
             const outputRange = [0, 1, 0];
 
-            const animatedTextStyle = useAnimatedStyle(() => {
+            // Scroll-based opacity (synchronous fade in/out with swipe)
+            const scrollOpacity = useAnimatedStyle(() => {
               const opacity = interpolate(
                 scrollX.value,
                 inputRange,
                 outputRange,
                 "clamp",
               );
+              return { opacity };
+            });
+
+            // Heading opacity: combines scroll opacity with appearance animation
+            const headingOpacity = useAnimatedStyle(() => {
+              const opacity =
+                interpolate(scrollX.value, inputRange, outputRange, "clamp") *
+                headingAppearance[index].value;
+              return { opacity };
+            });
+
+            // Body opacity: combines scroll opacity with appearance animation
+            const bodyOpacity = useAnimatedStyle(() => {
+              const opacity =
+                interpolate(scrollX.value, inputRange, outputRange, "clamp") *
+                bodyAppearance[index].value;
               return { opacity };
             });
 
@@ -174,32 +257,38 @@ export default function Carousel() {
                     right: 0,
                     paddingHorizontal: 24,
                   },
-                  animatedTextStyle,
+                  scrollOpacity,
                 ]}
                 pointerEvents="none"
               >
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 32,
-                    fontWeight: 600,
-                    textAlign: "center",
-                  }}
+                <Animated.Text
+                  style={[
+                    {
+                      color: "white",
+                      fontSize: 32,
+                      fontWeight: 600,
+                      textAlign: "center",
+                    },
+                    headingOpacity,
+                  ]}
                 >
                   {item.heading || ""}
-                </Text>
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 18,
-                    textAlign: "center",
-                    marginTop: 12,
-                    marginBottom: safeArea.bottom + 120,
-                    opacity: 0.8,
-                  }}
+                </Animated.Text>
+                <Animated.Text
+                  style={[
+                    {
+                      color: "white",
+                      fontSize: 18,
+                      textAlign: "center",
+                      marginTop: 12,
+                      marginBottom: safeArea.bottom + 120,
+                      opacity: 0.8,
+                    },
+                    bodyOpacity,
+                  ]}
                 >
                   {item.body || ""}
-                </Text>
+                </Animated.Text>
               </Animated.View>
             );
           })}
