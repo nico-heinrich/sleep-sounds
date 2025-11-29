@@ -1,6 +1,5 @@
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
-import { useEffect } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
@@ -18,13 +17,18 @@ import { sets } from "../data/sets";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const ITEM_WIDTH = SCREEN_WIDTH * 0.6;
 const ITEM_GAP = 18;
+const ITEM_SIZE = ITEM_WIDTH + ITEM_GAP;
 
-// individual carousel item component
+const FADE_OUT_DURATION = 200;
+const FADE_IN_DURATION = 1000;
+const HEADING_DELAY = 200;
+const BODY_DELAY = 400;
+
 function CarouselItem({ item, index, scrollX }: any) {
   const inputRange = [
-    (index - 1) * (ITEM_WIDTH + ITEM_GAP),
-    index * (ITEM_WIDTH + ITEM_GAP),
-    (index + 1) * (ITEM_WIDTH + ITEM_GAP),
+    (index - 1) * ITEM_SIZE,
+    index * ITEM_SIZE,
+    (index + 1) * ITEM_SIZE,
   ];
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -71,36 +75,30 @@ export default function Carousel() {
   const scrollX = useSharedValue(0);
   const currentIndex = useSharedValue(0);
 
-  // Create appearance opacity values for each item's heading and body
-  const headingAppearance = sets.map(() => useSharedValue(0));
-  const bodyAppearance = sets.map(() => useSharedValue(0));
+  const headingAppearance = sets.map((_, index) =>
+    useSharedValue(index === 0 ? 1 : 0),
+  );
+  const bodyAppearance = sets.map((_, index) =>
+    useSharedValue(index === 0 ? 1 : 0),
+  );
 
   const triggerHaptic = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  // Initialize first item on mount
-  useEffect(() => {
-    headingAppearance[0].value = withTiming(1, { duration: 600 });
-    bodyAppearance[0].value = withDelay(100, withTiming(1, { duration: 600 }));
-  }, []);
-
-  // React to index changes and trigger fade out then fade in animations
   useAnimatedReaction(
     () => currentIndex.value,
     (currentIdx, previousIdx) => {
       if (previousIdx !== null && currentIdx !== previousIdx) {
-        // Fade out the previous item
         if (previousIdx >= 0 && previousIdx < sets.length) {
           headingAppearance[previousIdx].value = withTiming(0, {
-            duration: 300,
+            duration: FADE_OUT_DURATION,
           });
           bodyAppearance[previousIdx].value = withTiming(0, {
-            duration: 300,
+            duration: FADE_OUT_DURATION,
           });
         }
 
-        // Reset all other appearances instantly
         sets.forEach((_, idx) => {
           if (idx !== currentIdx && idx !== previousIdx) {
             headingAppearance[idx].value = 0;
@@ -108,15 +106,14 @@ export default function Carousel() {
           }
         });
 
-        // Fade in the new active item with delay
         if (currentIdx >= 0 && currentIdx < sets.length) {
           headingAppearance[currentIdx].value = withDelay(
-            200,
-            withTiming(1, { duration: 600 }),
+            HEADING_DELAY,
+            withTiming(1, { duration: FADE_IN_DURATION }),
           );
           bodyAppearance[currentIdx].value = withDelay(
-            300,
-            withTiming(1, { duration: 600 }),
+            BODY_DELAY,
+            withTiming(1, { duration: FADE_IN_DURATION }),
           );
         }
       }
@@ -127,11 +124,8 @@ export default function Carousel() {
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
 
-      // Calculate current index based on scroll position
-      const itemWidth = ITEM_WIDTH + ITEM_GAP;
-      const newIndex = Math.round(event.contentOffset.x / itemWidth);
+      const newIndex = Math.round(event.contentOffset.x / ITEM_SIZE);
 
-      // Trigger haptic feedback when index changes
       if (
         newIndex !== currentIndex.value &&
         newIndex >= 0 &&
@@ -145,13 +139,12 @@ export default function Carousel() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* BACKGROUND LAYER */}
       <View style={StyleSheet.absoluteFill}>
         {sets.map((item, index) => {
           const inputRange = [
-            (index - 1) * (ITEM_WIDTH + ITEM_GAP),
-            index * (ITEM_WIDTH + ITEM_GAP),
-            (index + 1) * (ITEM_WIDTH + ITEM_GAP),
+            (index - 1) * ITEM_SIZE,
+            index * ITEM_SIZE,
+            (index + 1) * ITEM_SIZE,
           ];
 
           const animatedStyle = useAnimatedStyle(() => {
@@ -176,7 +169,6 @@ export default function Carousel() {
       </View>
 
       <View style={{ flex: 1 }}>
-        {/* CAROUSEL */}
         <Animated.FlatList
           data={dataWithSpacers}
           keyExtractor={(item) => item.id}
@@ -185,7 +177,7 @@ export default function Carousel() {
           snapToAlignment="start"
           decelerationRate={0.5}
           disableIntervalMomentum={true}
-          snapToInterval={ITEM_WIDTH + ITEM_GAP}
+          snapToInterval={ITEM_SIZE}
           contentContainerStyle={{ paddingTop: safeArea.top + 20 }}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
@@ -217,15 +209,13 @@ export default function Carousel() {
           }}
         >
           {sets.map((item, index) => {
-            // Heading opacity: only uses appearance animation
-            const headingOpacity = useAnimatedStyle(() => {
-              return { opacity: headingAppearance[index].value };
-            });
+            const headingOpacity = useAnimatedStyle(() => ({
+              opacity: headingAppearance[index].value,
+            }));
 
-            // Body opacity: only uses appearance animation
-            const bodyOpacity = useAnimatedStyle(() => {
-              return { opacity: bodyAppearance[index].value };
-            });
+            const bodyOpacity = useAnimatedStyle(() => ({
+              opacity: bodyAppearance[index].value,
+            }));
 
             return (
               <Animated.View
