@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { Dimensions, Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
-  runOnJS,
   useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -13,6 +12,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { scheduleOnRN } from "react-native-worklets";
 import { useSound } from "../contexts/SoundContext";
 import { sets } from "../data/sets";
 import PlayIndicator from "./PlayIndicator";
@@ -212,11 +212,11 @@ export default function Carousel() {
 
       // Trigger haptic feedback
       if (isInitialized.value) {
-        runOnJS(triggerHaptic)();
+        scheduleOnRN(triggerHaptic);
       }
 
       // Switch audio at the same time as text
-      runOnJS(switchAudio)(currentIdx);
+      scheduleOnRN(switchAudio, currentIdx);
 
       // Fade out previous item
       if (previousIdx >= 0 && previousIdx < sets.length) {
