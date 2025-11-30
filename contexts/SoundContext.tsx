@@ -27,6 +27,7 @@ const SoundContext = createContext<SoundContextType | undefined>(undefined);
 export function SoundProvider({ children }: { children: ReactNode }) {
   const fadeInDuration = 2000;
   const fadeOutDuration = 1000;
+  const crossfadeDuration = 2000;
 
   const [currentSoundId, setCurrentSoundId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -41,6 +42,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const positionCheckIntervalsRef = useRef<Map<AudioPlayer, NodeJS.Timeout>>(
     new Map(),
   );
+  const preloadedSoundsRef = useRef<Map<string, AudioPlayer>>(new Map());
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -63,6 +65,78 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       console.error("Error setting audio mode:", error);
     });
   }, []);
+
+  // Preload all sounds on app start
+  useEffect(() => {
+    const preloadSounds = async () => {
+      const preloadPromises = sets.map(async (soundData) => {
+        try {
+          const player = createAudioPlayer(soundData.audio, {
+            updateInterval: 16,
+          });
+
+          // Wait for sound to load
+          return new Promise<void>((resolve, reject) => {
+            const checkLoaded = setInterval(() => {
+              if (player.isLoaded && player.duration > 0) {
+                clearInterval(checkLoaded);
+                clearTimeout(timeoutId);
+                // Store preloaded player - pause it so it doesn't play
+                player.volume = 0.0;
+                try {
+                  player.pause();
+                } catch (error) {
+                  // Ignore pause errors
+                }
+                preloadedSoundsRef.current.set(soundData.id, player);
+                resolve();
+              }
+            }, 50);
+
+            const timeoutId = setTimeout(() => {
+              clearInterval(checkLoaded);
+              if (!player.isLoaded) {
+                console.warn(
+                  `Failed to preload sound "${soundData.id}" within timeout (10s). It will be loaded on-demand.`,
+                );
+                try {
+                  player.remove();
+                } catch (error) {
+                  // Ignore errors
+                }
+                reject(new Error(`Preload timeout for ${soundData.id}`));
+              }
+            }, 10000);
+
+            // Start loading by calling play (but volume is 0 so it's silent)
+            try {
+              player.play();
+            } catch (error) {
+              clearInterval(checkLoaded);
+              clearTimeout(timeoutId);
+              reject(error);
+            }
+          });
+        } catch (error) {
+          console.error(`Error preloading sound "${soundData.id}":`, error);
+        }
+      });
+
+      await Promise.allSettled(preloadPromises);
+      console.log(
+        `Preloaded ${preloadedSoundsRef.current.size} of ${sets.length} sounds`,
+      );
+    };
+
+    preloadSounds();
+  }, []);
+
+  const cancelAllFadeIntervals = () => {
+    activeFadeIntervalsRef.current.forEach((interval) => {
+      clearInterval(interval);
+    });
+    activeFadeIntervalsRef.current.clear();
+  };
 
   const fadeSound = async (
     player: AudioPlayer,
@@ -130,7 +204,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     if (!durationRef.current) return;
 
     const duration = durationRef.current;
-    const crossfadeStartTime = duration - 1000; // Start crossfade 1 second before end
+    const crossfadeStartTime = duration - crossfadeDuration * 1.5; // Start crossfade before end
 
     // Remove any existing interval for this player
     const existingInterval =
@@ -324,15 +398,18 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       // Get current volume of next sound (should be 0.0)
       const nextVolume = nextSound.volume;
 
-      // Fade out current and fade in next simultaneously
+      // Fade out current and fade in next simultaneously with equal durations
+      // This ensures the combined volume stays near 1.0 throughout the crossfade
       await Promise.all([
         fadeSound(
           currentSound,
           currentSound.volume,
           0.0,
-          fadeOutDuration,
+          crossfadeDuration,
         ).catch(() => {}),
-        fadeSound(nextSound, nextVolume, 1.0, fadeInDuration).catch(() => {}),
+        fadeSound(nextSound, nextVolume, 1.0, crossfadeDuration).catch(
+          () => {},
+        ),
       ]);
 
       // Crossfade complete - only proceed if we're still supposed to be playing
@@ -425,6 +502,63 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
   const playSound = async (soundId: string) => {
     try {
+      // If same sound is fading out, reverse the fade
+      if (currentSoundId === soundId && isFadingOut && soundRef.current) {
+        // Cancel fade out intervals
+        cancelAllFadeIntervals();
+
+        // Get current volume and fade to 1.0
+        const currentVolume = soundRef.current.volume;
+        setIsFadingOut(false);
+        setIsPlaying(true);
+
+        // Resume playback if paused
+        try {
+          soundRef.current.play();
+        } catch (error) {
+          // Ignore errors
+        }
+
+        // Find the sound data for setting up loop
+        const soundData = sets.find((set) => set.id === soundId);
+        if (soundData) {
+          // Fade from current volume to 1.0
+          await fadeSound(soundRef.current, currentVolume, 1.0, fadeInDuration);
+
+          // Set up seamless looping after fade in completes
+          if (
+            soundRef.current &&
+            isPlayingRef.current &&
+            currentSoundIdRef.current === soundId
+          ) {
+            // Wait for duration if needed
+            if (soundRef.current.isLoaded && soundRef.current.duration > 0) {
+              durationRef.current = soundRef.current.duration * 1000;
+              setupSeamlessLoop(soundRef.current, soundData, soundId);
+            } else {
+              const waitForDuration = setInterval(() => {
+                if (
+                  soundRef.current?.isLoaded &&
+                  soundRef.current.duration > 0
+                ) {
+                  clearInterval(waitForDuration);
+                  durationRef.current = soundRef.current.duration * 1000;
+                  if (
+                    soundRef.current &&
+                    isPlayingRef.current &&
+                    currentSoundIdRef.current === soundId
+                  ) {
+                    setupSeamlessLoop(soundRef.current, soundData, soundId);
+                  }
+                }
+              }, 50);
+              setTimeout(() => clearInterval(waitForDuration), 2000);
+            }
+          }
+        }
+        return;
+      }
+
       // If switching sounds, stop current immediately
       if (soundRef.current && currentSoundId !== soundId) {
         try {
@@ -432,10 +566,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
           isCrossfadingRef.current = false;
 
           // Clear all active fade intervals
-          activeFadeIntervalsRef.current.forEach((interval) => {
-            clearInterval(interval);
-          });
-          activeFadeIntervalsRef.current.clear();
+          cancelAllFadeIntervals();
 
           // Stop and remove nextSound if it exists (from crossfade)
           if (nextSoundRef.current) {
@@ -478,66 +609,124 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Create first sound instance starting at volume 0
-      const sound = createAudioPlayer(soundData.audio, {
-        updateInterval: 16, // High frequency updates for smooth crossfade
-      });
+      // Try to use preloaded sound if available, otherwise create new instance
+      let sound: AudioPlayer;
+      const preloadedSound = preloadedSoundsRef.current.get(soundId);
+      
+      if (preloadedSound && preloadedSound.isLoaded) {
+        // Use preloaded sound
+        sound = preloadedSound;
+        // Remove from preloaded map since we're using it
+        preloadedSoundsRef.current.delete(soundId);
+        // Reset volume and position for fresh playback
+        sound.volume = 0.0;
+        try {
+          sound.seekTo(0);
+        } catch (error) {
+          // Ignore seek errors
+        }
+      } else {
+        // Create new sound instance if not preloaded
+        sound = createAudioPlayer(soundData.audio, {
+          updateInterval: 16, // High frequency updates for smooth crossfade
+        });
+        sound.volume = 0.0;
+      }
 
-      sound.volume = 0.0;
       sound.play();
 
       // Track if sound loaded successfully
       let soundLoaded = false;
+      const timeoutDuration = 10000; // Increased to 10 seconds for larger files
 
-      // Wait for sound to load and get duration
-      const checkLoaded = setInterval(() => {
-        if (sound.isLoaded && sound.duration > 0) {
-          soundLoaded = true;
-          clearInterval(checkLoaded);
-          durationRef.current = sound.duration * 1000; // Convert seconds to milliseconds
-          soundRef.current = sound;
-          setCurrentSoundId(soundId);
-          setIsPlaying(true);
+      // Timeout if sound doesn't load
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-          // Fade in the sound
-          fadeSound(sound, 0.0, 1.0, fadeInDuration).then(() => {
-            // Set up seamless looping after fade in completes
-            if (
-              soundRef.current === sound &&
-              isPlayingRef.current &&
-              currentSoundIdRef.current === soundId
-            ) {
-              setupSeamlessLoop(sound, soundData, soundId);
-            }
-          });
-        }
-      }, 50);
+      // If sound is already loaded (from preload), proceed immediately
+      if (sound.isLoaded && sound.duration > 0) {
+        soundLoaded = true;
+        durationRef.current = sound.duration * 1000; // Convert seconds to milliseconds
+        soundRef.current = sound;
+        setCurrentSoundId(soundId);
+        setIsPlaying(true);
 
-      // Timeout after 5 seconds if sound doesn't load
-      setTimeout(() => {
-        clearInterval(checkLoaded);
-        if (!soundLoaded && !sound.isLoaded) {
-          console.error(
-            `Sound "${soundId}" failed to load within timeout (5s). Audio source may be invalid or network unavailable.`,
-          );
-          try {
-            sound.remove();
-          } catch (error) {
-            // Ignore errors if already removed
-          }
-          // Reset state if this was the sound we were trying to play
+        // Fade in the sound
+        fadeSound(sound, 0.0, 1.0, fadeInDuration).then(() => {
+          // Set up seamless looping after fade in completes
           if (
-            soundRef.current === sound ||
-            (!soundRef.current && currentSoundId === soundId)
+            soundRef.current === sound &&
+            isPlayingRef.current &&
+            currentSoundIdRef.current === soundId
           ) {
-            soundRef.current = null;
-            if (currentSoundId === soundId) {
-              setCurrentSoundId(null);
-              setIsPlaying(false);
+            setupSeamlessLoop(sound, soundData, soundId);
+          }
+        });
+      } else {
+        // Wait for sound to load and get duration
+        const checkLoaded = setInterval(() => {
+          if (sound.isLoaded && sound.duration > 0) {
+            soundLoaded = true;
+            clearInterval(checkLoaded);
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
+            durationRef.current = sound.duration * 1000; // Convert seconds to milliseconds
+            soundRef.current = sound;
+            setCurrentSoundId(soundId);
+            setIsPlaying(true);
+
+            // Fade in the sound
+            fadeSound(sound, 0.0, 1.0, fadeInDuration).then(() => {
+              // Set up seamless looping after fade in completes
+              if (
+                soundRef.current === sound &&
+                isPlayingRef.current &&
+                currentSoundIdRef.current === soundId
+              ) {
+                setupSeamlessLoop(sound, soundData, soundId);
+              }
+            });
+          }
+        }, 50);
+
+        // Set timeout if sound doesn't load
+        timeoutId = setTimeout(() => {
+          clearInterval(checkLoaded);
+          if (!soundLoaded && !sound.isLoaded) {
+            // Check sound status for more diagnostic info
+            const status = sound.currentStatus;
+            const diagnosticInfo = {
+              soundId,
+              isLoaded: sound.isLoaded,
+              duration: sound.duration,
+              status: status ? JSON.stringify(status) : "unknown",
+            };
+
+            console.error(
+              `Sound "${soundId}" failed to load within timeout (${timeoutDuration / 1000}s).`,
+              diagnosticInfo,
+            );
+
+            try {
+              sound.remove();
+            } catch (error) {
+              // Ignore errors if already removed
+            }
+            // Reset state if this was the sound we were trying to play
+            if (
+              soundRef.current === sound ||
+              (!soundRef.current && currentSoundId === soundId)
+            ) {
+              soundRef.current = null;
+              if (currentSoundId === soundId) {
+                setCurrentSoundId(null);
+                setIsPlaying(false);
+              }
             }
           }
-        }
-      }, 5000);
+        }, timeoutDuration);
+      }
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -559,10 +748,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       positionCheckIntervalsRef.current.clear();
 
       // Clear all active fade intervals
-      activeFadeIntervalsRef.current.forEach((interval) => {
-        clearInterval(interval);
-      });
-      activeFadeIntervalsRef.current.clear();
+      cancelAllFadeIntervals();
 
       // Fade out and pause both instances
       const fadePromises = [];
@@ -596,16 +782,21 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       }
 
       await Promise.all(fadePromises);
-      setIsFadingOut(false);
 
-      // Clean up after fade
-      if (soundRef.current) {
-        soundRef.current.remove();
-        soundRef.current = null;
-      }
-      if (nextSoundRef.current) {
-        nextSoundRef.current.remove();
-        nextSoundRef.current = null;
+      // Only update state if we're still fading out (not interrupted by playSound)
+      // Check isPlayingRef to see if playSound was called during fade out
+      if (!isPlayingRef.current) {
+        setIsFadingOut(false);
+
+        // Clean up after fade completes
+        if (soundRef.current) {
+          soundRef.current.remove();
+          soundRef.current = null;
+        }
+        if (nextSoundRef.current) {
+          nextSoundRef.current.remove();
+          nextSoundRef.current = null;
+        }
       }
     } catch (error) {
       console.error("Error pausing sound:", error);
@@ -626,10 +817,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     return () => {
       // Clear all active fade intervals
-      activeFadeIntervalsRef.current.forEach((interval) => {
-        clearInterval(interval);
-      });
-      activeFadeIntervalsRef.current.clear();
+      cancelAllFadeIntervals();
 
       // Clear all position check intervals
       positionCheckIntervalsRef.current.forEach((interval) => {
@@ -643,6 +831,16 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       if (nextSoundRef.current) {
         nextSoundRef.current.remove();
       }
+
+      // Clean up preloaded sounds
+      preloadedSoundsRef.current.forEach((player) => {
+        try {
+          player.remove();
+        } catch (error) {
+          // Ignore errors
+        }
+      });
+      preloadedSoundsRef.current.clear();
     };
   }, []);
 

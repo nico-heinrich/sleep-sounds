@@ -75,9 +75,6 @@ function CarouselItem({
     isPlaying && currentSoundId === soundId && isCurrentItem;
 
   const handleTogglePlay = async () => {
-    if (isFadingOut && currentSoundId === soundId) {
-      return;
-    }
     if (currentSoundId === soundId) {
       togglePlay();
     } else {

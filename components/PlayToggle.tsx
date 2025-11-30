@@ -17,13 +17,8 @@ export default function PlayToggle({
   small = true;
   const iconSize = small ? 16 : 24;
 
-  const handlePress = () => {
-    if (isFadingOut) return;
-    onPress();
-  };
-
   return (
-    <Button onPress={handlePress} small={small} disabled={isFadingOut}>
+    <Button onPress={onPress} small={small}>
       <View
         style={{
           height: "100%",

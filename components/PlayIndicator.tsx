@@ -5,7 +5,6 @@ import Animated, {
   withTiming,
   withDelay,
   Easing,
-  cancelAnimation,
 } from "react-native-reanimated";
 import { useEffect, useRef } from "react";
 import Svg, { Rect } from "react-native-svg";
@@ -21,36 +20,30 @@ const ANIMATION_DURATION = 600;
 function AnimatedBar({
   delay,
   maxHeight,
-  isPlaying,
   x,
 }: {
   delay: number;
   maxHeight: number;
-  isPlaying: boolean;
   x: number;
 }) {
   const height = useSharedValue(MIN_HEIGHT);
 
   useEffect(() => {
-    if (isPlaying) {
-      cancelAnimation(height);
-      height.value = MIN_HEIGHT;
+    // Start animation once and let it run continuously
+    const animation = withDelay(
+      delay,
+      withRepeat(
+        withTiming(maxHeight, {
+          duration: ANIMATION_DURATION,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        -1,
+        true,
+      ),
+    );
 
-      const animation = withDelay(
-        delay,
-        withRepeat(
-          withTiming(maxHeight, {
-            duration: ANIMATION_DURATION,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          -1,
-          true,
-        ),
-      );
-
-      height.value = animation;
-    }
-  }, [isPlaying, delay, maxHeight]);
+    height.value = animation;
+  }, [delay, maxHeight]);
 
   const animatedProps = useAnimatedProps(() => {
     const currentHeight = height.value;
@@ -125,19 +118,16 @@ export default function PlayIndicator({
       <AnimatedBar
         delay={300}
         maxHeight={MAX_HEIGHT}
-        isPlaying={isPlaying}
         x={bar1X}
       />
       <AnimatedBar
         delay={0}
         maxHeight={MAX_HEIGHT}
-        isPlaying={isPlaying}
         x={bar2X}
       />
       <AnimatedBar
         delay={150}
         maxHeight={MAX_HEIGHT}
-        isPlaying={isPlaying}
         x={bar3X}
       />
     </AnimatedSvg>
