@@ -1,13 +1,21 @@
-import { View } from "react-native";
-import { Link } from "expo-router";
-import Button from "../components/ui/Button";
-import CloseIcon from "../components/icons/CloseIcon";
-import Carousel from "../components/Carousel";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Carousel from "../components/Carousel";
+import CloseIcon from "../components/icons/CloseIcon";
+import Button from "../components/ui/Button";
+import { useSound } from "../contexts/SoundContext";
 
 export default function Sounds() {
   const safeArea = useSafeAreaInsets();
+  const router = useRouter();
+  const { stopSound } = useSound();
+
+  const handleNavigateHome = () => {
+    stopSound();
+    router.push("/");
+  };
 
   return (
     <View
@@ -31,20 +39,18 @@ export default function Sounds() {
         }}
       />
       <View style={{ position: "absolute", bottom: safeArea.bottom, left: 24 }}>
-        <Link href="/" asChild>
-          <Button>
-            <View
-              style={{
-                height: "100%",
-                aspectRatio: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <CloseIcon size={24} />
-            </View>
-          </Button>
-        </Link>
+        <Button onPress={handleNavigateHome}>
+          <View
+            style={{
+              height: "100%",
+              aspectRatio: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <CloseIcon size={24} />
+          </View>
+        </Button>
       </View>
       <View
         style={{
@@ -53,9 +59,7 @@ export default function Sounds() {
           right: 24,
         }}
       >
-        <Link href="/" asChild>
-          <Button label="Auswählen" />
-        </Link>
+        <Button label="Auswählen" onPress={handleNavigateHome} />
       </View>
     </View>
   );

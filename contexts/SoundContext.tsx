@@ -18,7 +18,7 @@ interface SoundContextType {
   isPlaying: boolean;
   isFadingOut: boolean;
   playSound: (soundId: string) => Promise<void>;
-  pauseSound: () => void;
+  stopSound: () => void;
   togglePlay: () => void;
 }
 
@@ -732,7 +732,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const pauseSound = async () => {
+  const stopSound = async () => {
     try {
       // Update UI immediately for responsive feel
       setIsPlaying(false);
@@ -750,7 +750,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       // Clear all active fade intervals
       cancelAllFadeIntervals();
 
-      // Fade out and pause both instances
+      // Fade out and stop both instances
       const fadePromises = [];
       if (soundRef.current) {
         const currentVolume = soundRef.current.volume;
@@ -807,7 +807,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
   const togglePlay = async () => {
     if (isPlaying) {
-      await pauseSound();
+      await stopSound();
     } else if (currentSoundId) {
       await playSound(currentSoundId);
     }
@@ -851,7 +851,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         isPlaying,
         isFadingOut,
         playSound,
-        pauseSound,
+        stopSound,
         togglePlay,
       }}
     >
