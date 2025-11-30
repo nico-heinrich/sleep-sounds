@@ -70,56 +70,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const preloadSounds = async () => {
       const preloadPromises = sets.map(async (soundData) => {
-        try {
-          const player = createAudioPlayer(soundData.audio, {
-            updateInterval: 16,
-          });
-
-          // Wait for sound to load
-          return new Promise<void>((resolve, reject) => {
-            const checkLoaded = setInterval(() => {
-              if (player.isLoaded && player.duration > 0) {
-                clearInterval(checkLoaded);
-                clearTimeout(timeoutId);
-                // Store preloaded player - pause it so it doesn't play
-                player.volume = 0.0;
-                try {
-                  player.pause();
-                } catch (error) {
-                  // Ignore pause errors
-                }
-                preloadedSoundsRef.current.set(soundData.id, player);
-                resolve();
-              }
-            }, 50);
-
-            const timeoutId = setTimeout(() => {
-              clearInterval(checkLoaded);
-              if (!player.isLoaded) {
-                console.warn(
-                  `Failed to preload sound "${soundData.id}" within timeout (10s). It will be loaded on-demand.`,
-                );
-                try {
-                  player.remove();
-                } catch (error) {
-                  // Ignore errors
-                }
-                reject(new Error(`Preload timeout for ${soundData.id}`));
-              }
-            }, 10000);
-
-            // Start loading by calling play (but volume is 0 so it's silent)
-            try {
-              player.play();
-            } catch (error) {
-              clearInterval(checkLoaded);
-              clearTimeout(timeoutId);
-              reject(error);
-            }
-          });
-        } catch (error) {
-          console.error(`Error preloading sound "${soundData.id}":`, error);
-        }
+        await preloadSingleSound(soundData.id);
       });
 
       await Promise.allSettled(preloadPromises);
@@ -136,6 +87,66 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       clearInterval(interval);
     });
     activeFadeIntervalsRef.current.clear();
+  };
+
+  const preloadSingleSound = async (soundId: string) => {
+    // Don't preload if already preloaded
+    if (preloadedSoundsRef.current.has(soundId)) {
+      return;
+    }
+
+    const soundData = sets.find((set) => set.id === soundId);
+    if (!soundData) {
+      return;
+    }
+
+    try {
+      const player = createAudioPlayer(soundData.audio, {
+        updateInterval: 16,
+      });
+
+      // Wait for sound to load
+      return new Promise<void>((resolve, reject) => {
+        const checkLoaded = setInterval(() => {
+          if (player.isLoaded && player.duration > 0) {
+            clearInterval(checkLoaded);
+            clearTimeout(timeoutId);
+            // Store preloaded player - pause it so it doesn't play
+            player.volume = 0.0;
+            try {
+              player.pause();
+            } catch (error) {
+              // Ignore pause errors
+            }
+            preloadedSoundsRef.current.set(soundId, player);
+            resolve();
+          }
+        }, 50);
+
+        const timeoutId = setTimeout(() => {
+          clearInterval(checkLoaded);
+          if (!player.isLoaded) {
+            try {
+              player.remove();
+            } catch (error) {
+              // Ignore errors
+            }
+            reject(new Error(`Preload timeout for ${soundId}`));
+          }
+        }, 10000);
+
+        // Start loading by calling play (but volume is 0 so it's silent)
+        try {
+          player.play();
+        } catch (error) {
+          clearInterval(checkLoaded);
+          clearTimeout(timeoutId);
+          reject(error);
+        }
+      });
+    } catch (error) {
+      console.error(`Error preloading sound "${soundId}":`, error);
+    }
   };
 
   const fadeSound = async (
@@ -625,15 +636,25 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         } catch (error) {
           // Ignore seek errors
         }
+        // Ensure it's playing immediately
+        try {
+          sound.play();
+          // Double-check it's actually playing
+          const status = sound.currentStatus;
+          if (status?.isLoaded && !status?.playing) {
+            sound.play();
+          }
+        } catch (error) {
+          // Ignore errors
+        }
       } else {
         // Create new sound instance if not preloaded
         sound = createAudioPlayer(soundData.audio, {
           updateInterval: 16, // High frequency updates for smooth crossfade
         });
         sound.volume = 0.0;
+        sound.play();
       }
-
-      sound.play();
 
       // Track if sound loaded successfully
       let soundLoaded = false;
@@ -649,6 +670,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         soundRef.current = sound;
         setCurrentSoundId(soundId);
         setIsPlaying(true);
+
+        // Re-preload this sound for next time (async, don't wait)
+        preloadSingleSound(soundId).catch(() => {
+          // Ignore errors - preload failure shouldn't block playback
+        });
 
         // Fade in the sound
         fadeSound(sound, 0.0, 1.0, fadeInDuration).then(() => {

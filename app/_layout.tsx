@@ -30,7 +30,7 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           animation: "fade",
-          animationDuration: 300,
+          animationDuration: 1000,
           gestureEnabled: false,
         }}
       />
