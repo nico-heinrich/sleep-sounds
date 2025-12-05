@@ -1,12 +1,11 @@
-import { Pressable, Text, View } from "react-native";
-import { BlurView } from "expo-blur";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolateColor,
-} from "react-native-reanimated";
 import { useCallback } from "react";
+import { Pressable, Text, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import GlassPane from "./GlassPane";
 
 export default function Button({
   small = false,
@@ -21,31 +20,34 @@ export default function Button({
   onPress?: () => void;
   disabled?: boolean;
 }) {
-  const height = small ? 36 : 64;
-  const padding = small ? 6 : 8;
+  const height = small ? 28 : 56;
+  const padding = small ? 6 : 14;
   const fontSize = small ? 14 : 16;
 
   const scale = useSharedValue(1);
+  const lightness = useSharedValue(0);
 
   const scaleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const backgroundStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      scale.value,
-      [0.95, 1],
-      ["rgba(255,255,255,0.2)", "rgba(255,255,255,0.1)"],
-    ),
+  const glassPaneStyle = useAnimatedStyle(() => ({
+    opacity: lightness.value * 0.1,
   }));
 
   const handlePressIn = useCallback(() => {
-    scale.value = withTiming(0.95, { duration: 150 });
-  }, []);
+    if (!small) {
+      scale.value = withTiming(0.96, { duration: 150 });
+    }
+    lightness.value = withTiming(1, { duration: 150 });
+  }, [small]);
 
   const handlePressOut = useCallback(() => {
-    scale.value = withTiming(1, { duration: 300 });
-  }, []);
+    if (!small) {
+      scale.value = withTiming(1, { duration: 300 });
+    }
+    lightness.value = withTiming(0, { duration: 300 });
+  }, [small]);
 
   return (
     <Animated.View style={[{ height }, scaleStyle]}>
@@ -56,31 +58,15 @@ export default function Button({
         style={{ height: "100%" }}
         disabled={disabled}
       >
-        <BlurView
-          intensity={40}
-          style={{
-            height: "100%",
-            borderRadius: 9999,
-            overflow: "hidden",
-          }}
-        >
-          <Animated.View
-            style={[
-              {
-                height: "100%",
-                padding,
-                borderRadius: 9999,
-                overflow: "hidden",
-              },
-              backgroundStyle,
-            ]}
-          >
+        <View style={{ position: "relative", height: "100%" }}>
+          <GlassPane borderRadius={24}>
             <View
               style={{
                 flex: 1,
                 flexDirection: "row",
                 alignItems: "center",
                 opacity: disabled ? 0.5 : 1,
+                pointerEvents: "none",
               }}
             >
               {children}
@@ -90,7 +76,7 @@ export default function Button({
                     color: "white",
                     textAlign: "center",
                     fontSize,
-                    fontFamily: "Satoshi-Bold",
+                    fontFamily: "Satoshi",
                     paddingStart: children ? padding * 1.25 : padding * 2,
                     paddingEnd: padding * 2,
                   }}
@@ -99,8 +85,23 @@ export default function Button({
                 </Text>
               )}
             </View>
-          </Animated.View>
-        </BlurView>
+          </GlassPane>
+          <Animated.View
+            style={[
+              {
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: 24,
+                backgroundColor: "white",
+                pointerEvents: "none",
+              },
+              glassPaneStyle,
+            ]}
+          />
+        </View>
       </Pressable>
     </Animated.View>
   );

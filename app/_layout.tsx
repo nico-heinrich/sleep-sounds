@@ -9,8 +9,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    "Satoshi-Regular": require("../assets/fonts/Satoshi-Regular.otf"),
-    "Satoshi-Bold": require("../assets/fonts/Satoshi-Bold.otf"),
+    Satoshi: require("../assets/fonts/Satoshi-Regular.otf"),
+    SatoshiBold: require("../assets/fonts/Satoshi-Bold.otf"),
   });
 
   useEffect(() => {

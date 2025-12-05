@@ -7,15 +7,13 @@ export default function PlayToggle({
   small = false,
   isPlaying,
   onPress,
-  isFadingOut = false,
 }: {
   small?: boolean;
   isPlaying: boolean;
   onPress: () => void;
-  isFadingOut?: boolean;
 }) {
   small = true;
-  const iconSize = small ? 16 : 24;
+  const iconSize = small ? 11 : 16;
 
   return (
     <Button onPress={onPress} small={small}>

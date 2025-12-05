@@ -48,7 +48,7 @@ export default function Sounds() {
               alignItems: "center",
             }}
           >
-            <CloseIcon size={24} />
+            <CloseIcon size={20} />
           </View>
         </Button>
       </View>
@@ -64,4 +64,3 @@ export default function Sounds() {
     </View>
   );
 }
-

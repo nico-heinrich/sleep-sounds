@@ -1,7 +1,13 @@
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useEffect, useRef } from "react";
-import { Dimensions, Platform, Pressable, StyleSheet, View } from "react-native";
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import Animated, {
   interpolate,
   useAnimatedReaction,
@@ -98,17 +104,12 @@ function CarouselItem({
           contentFit="cover"
           style={{
             width: ITEM_WIDTH,
-            height: 320,
+            height: (ITEM_WIDTH * 4) / 3,
             borderRadius: 48,
           }}
         />
         <View style={{ position: "absolute", bottom: 24, left: 24 }}>
-          <PlayToggle
-            small
-            isPlaying={isItemActive}
-            onPress={handlePress}
-            isFadingOut={isItemFadingOut}
-          />
+          <PlayToggle small isPlaying={isItemActive} onPress={handlePress} />
         </View>
         <View style={{ position: "absolute", bottom: 24, right: 24 }}>
           <PlayIndicator
@@ -183,11 +184,10 @@ export default function Carousel() {
     }
   };
 
-
   // Switch audio when index changes (if playing)
   const switchAudio = (idx: number) => {
     if (!isPlaying) return;
-    
+
     const newSoundId = sets[idx].id;
     if (currentSoundId !== newSoundId) {
       playSound(newSoundId);
@@ -197,7 +197,9 @@ export default function Carousel() {
   // Handle haptic feedback
   const triggerHaptic = () => {
     if (Platform.OS === "android") {
-      Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Segment_Frequent_Tick);
+      Haptics.performAndroidHapticsAsync(
+        Haptics.AndroidHaptics.Segment_Frequent_Tick,
+      );
     } else {
       Haptics.selectionAsync();
     }
@@ -324,7 +326,7 @@ export default function Carousel() {
             key={item.id}
             style={{
               position: "absolute",
-              top: 430,
+              top: 475,
               left: 0,
               right: 0,
               paddingHorizontal: 24,
@@ -336,7 +338,8 @@ export default function Carousel() {
                 {
                   color: "white",
                   fontSize: 32,
-                  fontFamily: "Satoshi-Bold",
+                  fontFamily: "Satoshi",
+                  fontWeight: "700",
                   textAlign: "center",
                 },
                 headingOpacity,
@@ -349,7 +352,7 @@ export default function Carousel() {
                 {
                   color: "white",
                   fontSize: 18,
-                  fontFamily: "Satoshi-Regular",
+                  fontFamily: "Satoshi",
                   textAlign: "center",
                   marginTop: 16,
                   marginBottom: safeArea.bottom + 120,
@@ -408,7 +411,7 @@ export default function Carousel() {
           decelerationRate={0.1}
           disableIntervalMomentum={true}
           snapToInterval={ITEM_SIZE}
-          contentContainerStyle={{ paddingTop: safeArea.top + 20 }}
+          contentContainerStyle={{ paddingTop: safeArea.top + 40 }}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           style={{ flex: 1 }}
