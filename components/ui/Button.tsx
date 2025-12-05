@@ -37,7 +37,7 @@ export default function Button({
 
   const handlePressIn = useCallback(() => {
     if (!small) {
-      scale.value = withTiming(0.96, { duration: 150 });
+      scale.value = withTiming(1.05, { duration: 150 });
     }
     lightness.value = withTiming(1, { duration: 150 });
   }, [small]);
