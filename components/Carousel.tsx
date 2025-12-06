@@ -136,7 +136,11 @@ interface CarouselProps {
   initialIndex?: number;
 }
 
-export default function Carousel({ onReadMore, onIndexChange, initialIndex = 0 }: CarouselProps) {
+export default function Carousel({
+  onReadMore,
+  onIndexChange,
+  initialIndex = 0,
+}: CarouselProps) {
   const safeArea = useSafeAreaInsets();
   const { currentSoundId, isPlaying, isFadingOut, playSound, togglePlay } =
     useSound();
@@ -145,19 +149,29 @@ export default function Carousel({ onReadMore, onIndexChange, initialIndex = 0 }
   const scrollX = useSharedValue(0);
   const currentIndex = useSharedValue(0);
   const isInitialized = useSharedValue(false);
-  const headingAppearance = sets.map((_, index) =>
-    useSharedValue(index === 0 ? 1 : 0),
+  
+  // Store appearance arrays in refs so they persist across re-renders
+  const headingAppearanceRef = useRef(
+    sets.map((_, index) => useSharedValue(index === 0 ? 1 : 0))
   );
-  const bodyAppearance = sets.map((_, index) =>
-    useSharedValue(index === 0 ? 1 : 0),
+  const bodyAppearanceRef = useRef(
+    sets.map((_, index) => useSharedValue(index === 0 ? 1 : 0))
   );
+  const headingAppearance = headingAppearanceRef.current;
+  const bodyAppearance = bodyAppearanceRef.current;
 
   // React state and refs
   const flatListRef = useRef<Animated.FlatList>(null);
   const isInitializedRef = useRef(false);
   const isManualPlayRef = useRef(false);
+  
+  // Store onIndexChange in ref to avoid effect re-running when callback changes
+  const onIndexChangeRef = useRef(onIndexChange);
+  useEffect(() => {
+    onIndexChangeRef.current = onIndexChange;
+  }, [onIndexChange]);
 
-  // Initialize component state
+  // Initialize component state - ONLY run when initialIndex changes
   useEffect(() => {
     const startIndex = Math.max(0, Math.min(initialIndex, sets.length - 1));
     scrollX.value = startIndex * ITEM_SIZE;
@@ -171,11 +185,11 @@ export default function Carousel({ onReadMore, onIndexChange, initialIndex = 0 }
       value.value = index === startIndex ? 1 : 0;
     });
 
-    // Notify parent of initial index
-    if (onIndexChange) {
-      onIndexChange(startIndex);
+    // Notify parent of initial index using ref
+    if (onIndexChangeRef.current) {
+      onIndexChangeRef.current(startIndex);
     }
-  }, [initialIndex, onIndexChange]);
+  }, [initialIndex]); // Only re-run when initialIndex changes!
 
   // Reset scroll position when FlatList is ready
   const handleFlatListLayout = () => {
