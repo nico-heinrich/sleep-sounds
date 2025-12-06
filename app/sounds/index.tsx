@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { View } from "react-native";
 import BottomActions from "../../components/BottomActions";
 import Carousel from "../../components/Carousel";
@@ -10,6 +10,10 @@ export default function Sounds() {
   const router = useRouter();
   const { selectSound, stopSound, currentSoundId, isPlaying } = useSound();
   
+  // Save the original sound ID when entering this screen
+  // This ensures we can restore it if user closes without selecting
+  const originalSoundIdRef = useRef(currentSoundId);
+  
   // Find the index of the current sound, default to 0 if not found
   const initialIndex = currentSoundId 
     ? sets.findIndex(set => set.id === currentSoundId)
@@ -19,9 +23,19 @@ export default function Sounds() {
   );
 
   const handleClose = useCallback(() => {
-    // Just go back, keep current sound playing
+    // Restore the original sound ID (in case it was changed by scrolling while playing)
+    if (originalSoundIdRef.current !== currentSoundId) {
+      selectSound(originalSoundIdRef.current || sets[0].id);
+      
+      // Stop the preview sound if it was playing
+      if (isPlaying) {
+        stopSound();
+      }
+    }
+    
+    // Go back
     router.back();
-  }, [router]);
+  }, [router, currentSoundId, selectSound, isPlaying, stopSound]);
 
   const handleSelect = useCallback(() => {
     const selectedSound = sets[currentCarouselIndex];
