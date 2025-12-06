@@ -133,9 +133,10 @@ function CarouselItem({
 interface CarouselProps {
   onReadMore?: (index: number) => void;
   onIndexChange?: (index: number) => void;
+  initialIndex?: number;
 }
 
-export default function Carousel({ onReadMore, onIndexChange }: CarouselProps) {
+export default function Carousel({ onReadMore, onIndexChange, initialIndex = 0 }: CarouselProps) {
   const safeArea = useSafeAreaInsets();
   const { currentSoundId, isPlaying, isFadingOut, playSound, togglePlay } =
     useSound();
@@ -158,29 +159,32 @@ export default function Carousel({ onReadMore, onIndexChange }: CarouselProps) {
 
   // Initialize component state
   useEffect(() => {
-    scrollX.value = 0;
-    currentIndex.value = 0;
+    const startIndex = Math.max(0, Math.min(initialIndex, sets.length - 1));
+    scrollX.value = startIndex * ITEM_SIZE;
+    currentIndex.value = startIndex;
     isManualPlayRef.current = false;
 
     headingAppearance.forEach((value, index) => {
-      value.value = index === 0 ? 1 : 0;
+      value.value = index === startIndex ? 1 : 0;
     });
     bodyAppearance.forEach((value, index) => {
-      value.value = index === 0 ? 1 : 0;
+      value.value = index === startIndex ? 1 : 0;
     });
 
     // Notify parent of initial index
     if (onIndexChange) {
-      onIndexChange(0);
+      onIndexChange(startIndex);
     }
-  }, [onIndexChange]);
+  }, [initialIndex, onIndexChange]);
 
   // Reset scroll position when FlatList is ready
   const handleFlatListLayout = () => {
     if (flatListRef.current && !isInitializedRef.current) {
-      flatListRef.current.scrollToOffset({ offset: 0, animated: false });
-      scrollX.value = 0;
-      currentIndex.value = 0;
+      const startIndex = Math.max(0, Math.min(initialIndex, sets.length - 1));
+      const offset = startIndex * ITEM_SIZE;
+      flatListRef.current.scrollToOffset({ offset, animated: false });
+      scrollX.value = offset;
+      currentIndex.value = startIndex;
       requestAnimationFrame(() => {
         isInitializedRef.current = true;
         isInitialized.value = true;
@@ -473,7 +477,6 @@ export default function Carousel({ onReadMore, onIndexChange }: CarouselProps) {
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           style={{ flex: 1 }}
-          initialScrollIndex={0}
           onLayout={handleFlatListLayout}
           renderItem={renderCarouselItem}
         />

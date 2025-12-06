@@ -8,8 +8,15 @@ import { sets } from "../../data/sets";
 
 export default function Sounds() {
   const router = useRouter();
-  const { playSound } = useSound();
-  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+  const { playSound, currentSoundId } = useSound();
+  
+  // Find the index of the current sound, default to 0 if not found
+  const initialIndex = currentSoundId 
+    ? sets.findIndex(set => set.id === currentSoundId)
+    : 0;
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(
+    initialIndex >= 0 ? initialIndex : 0
+  );
 
   const handleClose = useCallback(() => {
     // Just go back, keep current sound playing
@@ -42,7 +49,11 @@ export default function Sounds() {
         backgroundColor: "black",
       }}
     >
-      <Carousel onReadMore={handleReadMore} onIndexChange={handleIndexChange} />
+      <Carousel 
+        onReadMore={handleReadMore} 
+        onIndexChange={handleIndexChange}
+        initialIndex={initialIndex >= 0 ? initialIndex : 0}
+      />
       <BottomActions
         onClose={handleClose}
         rightButton={{
