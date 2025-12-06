@@ -3,7 +3,13 @@ export const sets = [
     id: "01",
     heading: "Dusty Rain",
     body: `A nostalgic collection evoking memories of rainy days.
-Some more text to test multiline display of the body text in the app.`,
+Some more text to test multiline display of the body text in the app.
+More and more text to see how it looks when it wraps around multiple lines.
+Even more text to ensure proper spacing and readability within the app's UI.
+Enjoy the soothing ambiance created by the gentle patter of rain and the earthy scent of wet dust.
+
+Perfect for relaxation and reflection.
+`,
     image: require("../assets/sets/images/01.png"),
     audio: require("../assets/sets/audio/01.mp3"),
     video: require("../assets/sets/video/01.mp4"),

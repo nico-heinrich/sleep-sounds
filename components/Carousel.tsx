@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 import Animated, {
@@ -42,6 +43,12 @@ const getInputRange = (index: number) => [
   index * ITEM_SIZE,
   (index + 1) * ITEM_SIZE,
 ];
+
+// Helper function to extract first 2 sentences
+const getFirstTwoSentences = (text: string): string => {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+  return sentences.slice(0, 2).join(" ").trim();
+};
 
 interface CarouselItemProps {
   item: any;
@@ -122,7 +129,11 @@ function CarouselItem({
   );
 }
 
-export default function Carousel() {
+interface CarouselProps {
+  onReadMore?: (index: number) => void;
+}
+
+export default function Carousel({ onReadMore }: CarouselProps) {
   const safeArea = useSafeAreaInsets();
   const { currentSoundId, isPlaying, isFadingOut, playSound, togglePlay } =
     useSound();
@@ -309,7 +320,7 @@ export default function Carousel() {
         left: 0,
         right: 0,
         bottom: 0,
-        pointerEvents: "none",
+        pointerEvents: "box-none",
       }}
     >
       {sets.map((item, index) => {
@@ -321,17 +332,19 @@ export default function Carousel() {
           opacity: bodyAppearance[index].value,
         }));
 
+        const truncatedBody = getFirstTwoSentences(item.body || "");
+        const hasMore = truncatedBody.length < (item.body || "").trim().length;
+
         return (
           <View
             key={item.id}
             style={{
               position: "absolute",
-              top: 475,
+              top: 450,
               left: 0,
               right: 0,
               paddingHorizontal: 24,
             }}
-            pointerEvents="none"
           >
             <Animated.Text
               style={[
@@ -344,25 +357,58 @@ export default function Carousel() {
                 },
                 headingOpacity,
               ]}
+              pointerEvents="none"
             >
               {item.heading || ""}
             </Animated.Text>
-            <Animated.Text
+            <Animated.View
               style={[
                 {
+                  marginTop: 16,
+                  marginBottom: safeArea.bottom + 120,
+                },
+                bodyOpacity,
+              ]}
+              pointerEvents="box-none"
+            >
+              <Text
+                style={{
                   color: "white",
                   fontSize: 18,
                   fontFamily: "Satoshi",
                   textAlign: "center",
-                  marginTop: 16,
-                  marginBottom: safeArea.bottom + 120,
                   opacity: 0.8,
-                },
-                bodyOpacity,
-              ]}
-            >
-              {item.body || ""}
-            </Animated.Text>
+                }}
+                pointerEvents="none"
+              >
+                {truncatedBody}
+                {hasMore && " "}
+              </Text>
+              {hasMore && (
+                <Pressable
+                  onPress={() => {
+                    onReadMore?.(index);
+                  }}
+                  hitSlop={8}
+                  style={{ alignSelf: "center" }}
+                >
+                  <Text
+                    suppressHighlighting
+                    style={{
+                      textDecorationLine: "underline",
+                      color: "white",
+                      opacity: 0.9,
+                      fontSize: 18,
+                      fontFamily: "Satoshi",
+                      textAlign: "center",
+                      marginTop: 2,
+                    }}
+                  >
+                    Read more
+                  </Text>
+                </Pressable>
+              )}
+            </Animated.View>
           </View>
         );
       })}
