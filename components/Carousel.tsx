@@ -171,7 +171,7 @@ export default function Carousel({
     onIndexChangeRef.current = onIndexChange;
   }, [onIndexChange]);
 
-  // Initialize component state - ONLY run when initialIndex changes
+  // Initialize component state - ONLY run on mount
   useEffect(() => {
     const startIndex = Math.max(0, Math.min(initialIndex, sets.length - 1));
     scrollX.value = startIndex * ITEM_SIZE;
@@ -189,7 +189,7 @@ export default function Carousel({
     if (onIndexChangeRef.current) {
       onIndexChangeRef.current(startIndex);
     }
-  }, [initialIndex]); // Only re-run when initialIndex changes!
+  }, []); // Only run once on mount!
 
   // Reset scroll position when FlatList is ready
   const handleFlatListLayout = () => {
