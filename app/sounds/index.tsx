@@ -8,7 +8,7 @@ import { sets } from "../../data/sets";
 
 export default function Sounds() {
   const router = useRouter();
-  const { playSound, currentSoundId } = useSound();
+  const { playSound, stopSound, currentSoundId } = useSound();
   
   // Find the index of the current sound, default to 0 if not found
   const initialIndex = currentSoundId 
@@ -23,14 +23,20 @@ export default function Sounds() {
     router.push("/");
   }, [router]);
 
-  const handleSelect = useCallback(async () => {
-    // Play the currently displayed sound
+  const handleSelect = useCallback(() => {
+    // Set the currently displayed sound as the selected one
     const selectedSound = sets[currentCarouselIndex];
     if (selectedSound) {
-      await playSound(selectedSound.id);
+      // Set it as current (start loading but don't wait)
+      playSound(selectedSound.id);
     }
+    
+    // Start fade out (don't wait - let it happen during screen transition)
+    stopSound();
+    
+    // Navigate immediately
     router.push("/");
-  }, [currentCarouselIndex, playSound, router]);
+  }, [currentCarouselIndex, playSound, stopSound, router]);
 
   const handleReadMore = useCallback((index: number) => {
     router.push(`/sounds/${index}`);
