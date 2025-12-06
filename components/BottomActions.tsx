@@ -1,13 +1,13 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { View } from "react-native";
 import Animated, {
+  FadeInDown,
   FadeInLeft,
   FadeInRight,
-  ZoomIn,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Button from "./ui/Button";
 import CloseIcon from "./icons/CloseIcon";
+import Button from "./ui/Button";
 
 interface BottomActionsProps {
   onClose: () => void;
@@ -16,28 +16,32 @@ interface BottomActionsProps {
     onPress: () => void;
   };
   delay?: number;
+  background?: boolean;
 }
 
 export default function BottomActions({
   onClose,
   rightButton,
   delay = 200,
+  background = false,
 }: BottomActionsProps) {
   const safeArea = useSafeAreaInsets();
 
   return (
     <>
-      <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.5)"]}
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 120 + safeArea.bottom,
-          pointerEvents: "none",
-        }}
-      />
+      {background && (
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.75)"]}
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 120 + safeArea.bottom,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       {rightButton ? (
         // Two button layout: close on left, action on right
@@ -79,7 +83,10 @@ export default function BottomActions({
       ) : (
         // Single button layout: close button centered
         <Animated.View
-          entering={ZoomIn.duration(600).springify().damping(60).delay(delay)}
+          entering={FadeInDown.duration(600)
+            .springify()
+            .damping(60)
+            .delay(delay)}
           style={{
             position: "absolute",
             bottom: safeArea.bottom,

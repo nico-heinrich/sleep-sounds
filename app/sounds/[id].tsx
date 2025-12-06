@@ -84,7 +84,7 @@ export default function SoundDetail() {
           </Animated.View>
         </ScrollView>
 
-        <BottomActions onClose={() => router.back()} />
+        <BottomActions onClose={() => router.back()} background />
       </View>
     </View>
   );
