@@ -12,7 +12,6 @@ export default function PlayToggle({
   isPlaying: boolean;
   onPress: () => void;
 }) {
-  small = true;
   const iconSize = small ? 11 : 16;
 
   return (

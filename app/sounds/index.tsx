@@ -1,26 +1,37 @@
 import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { View } from "react-native";
 import BottomActions from "../../components/BottomActions";
 import Carousel from "../../components/Carousel";
 import { useSound } from "../../contexts/SoundContext";
+import { sets } from "../../data/sets";
 
 export default function Sounds() {
   const router = useRouter();
-  const { stopSound } = useSound();
+  const { playSound } = useSound();
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
-  const handleClose = () => {
-    stopSound();
+  const handleClose = useCallback(() => {
+    // Just go back, keep current sound playing
     router.push("/");
-  };
+  }, [router]);
 
-  const handleSelect = () => {
-    stopSound();
+  const handleSelect = useCallback(async () => {
+    // Play the currently displayed sound
+    const selectedSound = sets[currentCarouselIndex];
+    if (selectedSound) {
+      await playSound(selectedSound.id);
+    }
     router.push("/");
-  };
+  }, [currentCarouselIndex, playSound, router]);
 
-  const handleReadMore = (index: number) => {
+  const handleReadMore = useCallback((index: number) => {
     router.push(`/sounds/${index}`);
-  };
+  }, [router]);
+
+  const handleIndexChange = useCallback((index: number) => {
+    setCurrentCarouselIndex(index);
+  }, []);
 
   return (
     <View
@@ -31,7 +42,7 @@ export default function Sounds() {
         backgroundColor: "black",
       }}
     >
-      <Carousel onReadMore={handleReadMore} />
+      <Carousel onReadMore={handleReadMore} onIndexChange={handleIndexChange} />
       <BottomActions
         onClose={handleClose}
         rightButton={{

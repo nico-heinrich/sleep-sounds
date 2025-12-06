@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import Animated, {
   interpolate,
+  runOnJS,
   useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -131,9 +132,10 @@ function CarouselItem({
 
 interface CarouselProps {
   onReadMore?: (index: number) => void;
+  onIndexChange?: (index: number) => void;
 }
 
-export default function Carousel({ onReadMore }: CarouselProps) {
+export default function Carousel({ onReadMore, onIndexChange }: CarouselProps) {
   const safeArea = useSafeAreaInsets();
   const { currentSoundId, isPlaying, isFadingOut, playSound, togglePlay } =
     useSound();
@@ -166,7 +168,12 @@ export default function Carousel({ onReadMore }: CarouselProps) {
     bodyAppearance.forEach((value, index) => {
       value.value = index === 0 ? 1 : 0;
     });
-  }, []);
+
+    // Notify parent of initial index
+    if (onIndexChange) {
+      onIndexChange(0);
+    }
+  }, [onIndexChange]);
 
   // Reset scroll position when FlatList is ready
   const handleFlatListLayout = () => {
@@ -226,6 +233,11 @@ export default function Carousel({ onReadMore }: CarouselProps) {
       // Trigger haptic feedback
       if (isInitialized.value) {
         scheduleOnRN(triggerHaptic);
+      }
+
+      // Notify parent component of index change
+      if (onIndexChange) {
+        runOnJS(onIndexChange)(currentIdx);
       }
 
       // Switch audio at the same time as text
