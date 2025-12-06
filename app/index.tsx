@@ -13,7 +13,7 @@ export default function Index() {
     isPlaying,
     playSound,
     stopSound,
-    shouldAnimateControls,
+    shouldAnimateHome,
   } = useSound();
 
   // Default to first set if no sound is selected
@@ -38,7 +38,7 @@ export default function Index() {
       stopSound();
     } else {
       // Play the active set (the one whose video is showing)
-      await playSound(activeSetId);
+      await playSound(activeSetId, { animate: true });
     }
   };
 
@@ -57,8 +57,8 @@ export default function Index() {
       {/* Heading - shown when not playing */}
       {!isPlaying && (
         <Animated.View
-          entering={shouldAnimateControls ? FadeIn.duration(600) : undefined}
-          exiting={shouldAnimateControls ? FadeOut.duration(400) : undefined}
+          entering={shouldAnimateHome ? FadeIn.duration(600) : undefined}
+          exiting={shouldAnimateHome ? FadeOut.duration(400) : undefined}
           style={styles.headingContainer}
         >
           <Text style={styles.heading}>time to sleep well</Text>

@@ -17,10 +17,10 @@ interface SoundContextType {
   currentSoundId: string | null;
   isPlaying: boolean;
   isFadingOut: boolean;
-  shouldAnimateControls: boolean;
-  playSound: (soundId: string) => Promise<void>;
+  shouldAnimateHome: boolean;
+  playSound: (soundId: string, options?: { animate?: boolean }) => Promise<void>;
   stopSound: (options?: { animate?: boolean }) => void;
-  togglePlay: () => void;
+  togglePlay: (options?: { animate?: boolean }) => void;
   selectSound: (soundId: string) => void;
 }
 
@@ -34,7 +34,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const [currentSoundId, setCurrentSoundId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
-  const [shouldAnimateControls, setShouldAnimateControls] = useState(true);
+  const [shouldAnimateHome, setShouldAnimateHome] = useState(true);
   const soundRef = useRef<AudioPlayer | null>(null);
   const nextSoundRef = useRef<AudioPlayer | null>(null);
   const durationRef = useRef<number | null>(null);
@@ -514,7 +514,15 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const playSound = async (soundId: string) => {
+  const playSound = async (soundId: string, options?: { animate?: boolean }) => {
+    const shouldAnimate = options?.animate ?? true;
+    
+    // Set animation flag before any state updates
+    if (shouldAnimate) {
+      setShouldAnimateHome(true);
+      await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
+    }
+    
     try {
       // If same sound is fading out, reverse the fade
       if (currentSoundId === soundId && isFadingOut && soundRef.current) {
@@ -768,7 +776,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       // Update UI immediately for responsive feel
       setIsPlaying(false);
       setIsFadingOut(true);
-      setShouldAnimateControls(shouldAnimate);
+      setShouldAnimateHome(shouldAnimate);
 
       // Clear any active crossfade
       isCrossfadingRef.current = false;
@@ -837,13 +845,13 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const togglePlay = async () => {
+  const togglePlay = async (options?: { animate?: boolean }) => {
+    const shouldAnimate = options?.animate ?? true;
+    
     if (isPlaying) {
-      // When toggling from controls, always animate
-      await stopSound({ animate: true });
+      await stopSound({ animate: shouldAnimate });
     } else if (currentSoundId) {
-      await playSound(currentSoundId);
-      setShouldAnimateControls(true);
+      await playSound(currentSoundId, { animate: shouldAnimate });
     }
   };
 
@@ -889,7 +897,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         currentSoundId,
         isPlaying,
         isFadingOut,
-        shouldAnimateControls,
+        shouldAnimateHome,
         playSound,
         stopSound,
         togglePlay,

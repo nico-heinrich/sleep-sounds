@@ -72,7 +72,7 @@ export default function HomeControls({
   onPlayToggle,
 }: HomeControlsProps) {
   const safeArea = useSafeAreaInsets();
-  const { shouldAnimateControls } = useSound();
+  const { shouldAnimateHome } = useSound();
 
   return (
     <View
@@ -90,8 +90,8 @@ export default function HomeControls({
       {/* Left Button - Link to Sounds (hidden when playing) */}
       {!isPlaying && (
         <Animated.View
-          entering={shouldAnimateControls ? growFromCenter("left") : undefined}
-          exiting={shouldAnimateControls ? shrinkToCenter("left") : undefined}
+          entering={shouldAnimateHome ? growFromCenter("left") : undefined}
+          exiting={shouldAnimateHome ? shrinkToCenter("left") : undefined}
         >
           <Link href="/sounds" asChild>
             <Button>
@@ -116,8 +116,8 @@ export default function HomeControls({
       {/* Right Button - Random Icon (hidden when playing) */}
       {!isPlaying && (
         <Animated.View
-          entering={shouldAnimateControls ? growFromCenter("right") : undefined}
-          exiting={shouldAnimateControls ? shrinkToCenter("right") : undefined}
+          entering={shouldAnimateHome ? growFromCenter("right") : undefined}
+          exiting={shouldAnimateHome ? shrinkToCenter("right") : undefined}
         >
           <Button onPress={() => console.log("Right button pressed")}>
             <View

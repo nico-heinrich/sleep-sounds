@@ -142,8 +142,13 @@ export default function Carousel({
   initialIndex = 0,
 }: CarouselProps) {
   const safeArea = useSafeAreaInsets();
-  const { currentSoundId, isPlaying, isFadingOut, playSound, togglePlay } =
-    useSound();
+  const {
+    currentSoundId,
+    isPlaying,
+    isFadingOut,
+    playSound,
+    togglePlay,
+  } = useSound();
 
   // Shared values for animations
   const scrollX = useSharedValue(0);
@@ -210,7 +215,7 @@ export default function Carousel({
   const handlePlaySound = async (soundId: string) => {
     isManualPlayRef.current = true;
     try {
-      await playSound(soundId);
+      await playSound(soundId, { animate: true });
       setTimeout(() => {
         isManualPlayRef.current = false;
       }, MANUAL_PLAY_COOLDOWN);
