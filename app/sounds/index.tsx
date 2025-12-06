@@ -8,7 +8,7 @@ import { sets } from "../../data/sets";
 
 export default function Sounds() {
   const router = useRouter();
-  const { playSound, stopSound, currentSoundId } = useSound();
+  const { selectSound, stopSound, currentSoundId, isPlaying } = useSound();
   
   // Find the index of the current sound, default to 0 if not found
   const initialIndex = currentSoundId 
@@ -20,23 +20,25 @@ export default function Sounds() {
 
   const handleClose = useCallback(() => {
     // Just go back, keep current sound playing
-    router.push("/");
+    router.back();
   }, [router]);
 
   const handleSelect = useCallback(() => {
-    // Set the currently displayed sound as the selected one
     const selectedSound = sets[currentCarouselIndex];
+    
+    // Select the currently displayed sound (updates the home screen video)
     if (selectedSound) {
-      // Set it as current (start loading but don't wait)
-      playSound(selectedSound.id);
+      selectSound(selectedSound.id);
     }
     
-    // Start fade out (don't wait - let it happen during screen transition)
-    stopSound();
+    // If something is playing, fade it out during transition
+    if (isPlaying) {
+      stopSound();
+    }
     
     // Navigate immediately
-    router.push("/");
-  }, [currentCarouselIndex, playSound, stopSound, router]);
+    router.back();
+  }, [currentCarouselIndex, selectSound, stopSound, isPlaying, router]);
 
   const handleReadMore = useCallback((index: number) => {
     router.push(`/sounds/${index}`);

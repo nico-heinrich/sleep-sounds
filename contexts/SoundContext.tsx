@@ -20,6 +20,7 @@ interface SoundContextType {
   playSound: (soundId: string) => Promise<void>;
   stopSound: () => void;
   togglePlay: () => void;
+  selectSound: (soundId: string) => void;
 }
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
@@ -839,6 +840,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const selectSound = (soundId: string) => {
+    // Simply set the current sound ID without playing
+    setCurrentSoundId(soundId);
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -879,6 +885,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         playSound,
         stopSound,
         togglePlay,
+        selectSound,
       }}
     >
       {children}

@@ -20,10 +20,10 @@ export default function Index() {
     player.play();
   });
 
-  // Update video source when active set changes
+  // Update video source only when the active set ID changes
   useEffect(() => {
     player.replaceAsync(activeSet.video);
-  }, [activeSet.video]);
+  }, [activeSetId, player]);
 
   // Custom toggle handler that plays the active set if no sound is selected
   const handlePlayToggle = async () => {
