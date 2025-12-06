@@ -17,8 +17,9 @@ interface SoundContextType {
   currentSoundId: string | null;
   isPlaying: boolean;
   isFadingOut: boolean;
+  shouldAnimateControls: boolean;
   playSound: (soundId: string) => Promise<void>;
-  stopSound: () => void;
+  stopSound: (options?: { animate?: boolean }) => void;
   togglePlay: () => void;
   selectSound: (soundId: string) => void;
 }
@@ -33,6 +34,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const [currentSoundId, setCurrentSoundId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [shouldAnimateControls, setShouldAnimateControls] = useState(true);
   const soundRef = useRef<AudioPlayer | null>(null);
   const nextSoundRef = useRef<AudioPlayer | null>(null);
   const durationRef = useRef<number | null>(null);
@@ -759,11 +761,14 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const stopSound = async () => {
+  const stopSound = async (options?: { animate?: boolean }) => {
+    const shouldAnimate = options?.animate ?? true;
+    
     try {
       // Update UI immediately for responsive feel
       setIsPlaying(false);
       setIsFadingOut(true);
+      setShouldAnimateControls(shouldAnimate);
 
       // Clear any active crossfade
       isCrossfadingRef.current = false;
@@ -834,9 +839,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
   const togglePlay = async () => {
     if (isPlaying) {
-      await stopSound();
+      // When toggling from controls, always animate
+      await stopSound({ animate: true });
     } else if (currentSoundId) {
       await playSound(currentSoundId);
+      setShouldAnimateControls(true);
     }
   };
 
@@ -882,6 +889,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         currentSoundId,
         isPlaying,
         isFadingOut,
+        shouldAnimateControls,
         playSound,
         stopSound,
         togglePlay,

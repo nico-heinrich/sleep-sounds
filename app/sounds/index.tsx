@@ -28,9 +28,9 @@ export default function Sounds() {
       selectSound(originalSoundIdRef.current || sets[0].id);
     }
 
-    // Stop the preview sound if it was playing
+    // Stop the preview sound if it was playing (without animating home controls)
     if (isPlaying) {
-      stopSound();
+      stopSound({ animate: false });
     }
 
     // Go back
@@ -45,9 +45,9 @@ export default function Sounds() {
       selectSound(selectedSound.id);
     }
 
-    // If something is playing, fade it out during transition
+    // If something is playing, fade it out during transition (without animating home controls)
     if (isPlaying) {
-      stopSound();
+      stopSound({ animate: false });
     }
 
     // Navigate immediately

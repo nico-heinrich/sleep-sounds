@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSound } from "../contexts/SoundContext";
 import PlayToggle from "./PlayToggle";
 import Button from "./ui/Button";
 
@@ -71,6 +72,7 @@ export default function HomeControls({
   onPlayToggle,
 }: HomeControlsProps) {
   const safeArea = useSafeAreaInsets();
+  const { shouldAnimateControls } = useSound();
 
   return (
     <View
@@ -88,8 +90,8 @@ export default function HomeControls({
       {/* Left Button - Link to Sounds (hidden when playing) */}
       {!isPlaying && (
         <Animated.View
-          entering={growFromCenter("left")}
-          exiting={shrinkToCenter("left")}
+          entering={shouldAnimateControls ? growFromCenter("left") : undefined}
+          exiting={shouldAnimateControls ? shrinkToCenter("left") : undefined}
         >
           <Link href="/sounds" asChild>
             <Button>
@@ -114,8 +116,8 @@ export default function HomeControls({
       {/* Right Button - Random Icon (hidden when playing) */}
       {!isPlaying && (
         <Animated.View
-          entering={growFromCenter("right")}
-          exiting={shrinkToCenter("right")}
+          entering={shouldAnimateControls ? growFromCenter("right") : undefined}
+          exiting={shouldAnimateControls ? shrinkToCenter("right") : undefined}
         >
           <Button onPress={() => console.log("Right button pressed")}>
             <View
