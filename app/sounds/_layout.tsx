@@ -15,7 +15,7 @@ export default function SoundsLayout() {
         name="[id]"
         options={{
           presentation: "transparentModal",
-          animation: "fade",
+          animation: "simple_push",
         }}
       />
     </Stack>

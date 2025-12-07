@@ -12,13 +12,15 @@ export default function Button({
   label,
   children,
   disabled = false,
+  square = false,
   onPress,
 }: {
   small?: boolean;
   label?: string;
   children?: React.ReactNode;
-  onPress?: () => void;
   disabled?: boolean;
+  square?: boolean;
+  onPress?: () => void;
 }) {
   const height = small ? 28 : 56;
   const padding = small ? 6 : 14;
@@ -55,7 +57,7 @@ export default function Button({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={{ height: "100%" }}
+        style={{ height: "100%", aspectRatio: square ? 1 : undefined }}
         disabled={disabled}
       >
         <View style={{ position: "relative", height: "100%" }}>
@@ -65,6 +67,7 @@ export default function Button({
                 flex: 1,
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "center",
                 opacity: disabled ? 0.5 : 1,
                 pointerEvents: "none",
               }}

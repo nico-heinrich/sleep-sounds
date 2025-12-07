@@ -1,26 +1,19 @@
-import Svg, { Path } from "react-native-svg";
+import IconBase from "./IconBase";
 
 export default function StopIcon({
-  size,
-  color,
+  mini = false,
+  color = "white",
 }: {
-  size?: number;
+  mini?: boolean;
   color?: string;
 }) {
   return (
-    <Svg
-      width={size || "100%"}
-      height={size || "100%"}
-      viewBox="0 0 24 24"
-      fillRule="evenodd"
-      clipRule="evenodd"
-      strokeLinejoin="round"
-      strokeMiterlimit="2"
-    >
-      <Path
-        d="M20.812,6.656L20.812,17.344C20.812,19.258 19.258,20.812 17.344,20.812L6.656,20.812C4.742,20.812 3.188,19.258 3.188,17.344L3.188,6.656C3.188,4.742 4.742,3.188 6.656,3.188L17.344,3.188C19.258,3.188 20.812,4.742 20.812,6.656Z"
-        fill={color || "white"}
-      />
-    </Svg>
+    <IconBase
+      paths={[
+        "M19.259,7.63L19.259,16.37C19.259,17.934 17.989,19.205 16.424,19.205L7.685,19.205C6.12,19.205 4.85,17.934 4.85,16.37L4.85,7.63C4.85,6.066 6.12,4.795 7.685,4.795L16.424,4.795C17.989,4.795 19.259,6.066 19.259,7.63Z",
+      ]}
+      mini={mini}
+      color={color}
+    />
   );
 }

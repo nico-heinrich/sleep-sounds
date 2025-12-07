@@ -1,14 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { View } from "react-native";
-import Animated, {
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { withSpring, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSound } from "../contexts/SoundContext";
 import PlayToggle from "./PlayToggle";
 import Button from "./ui/Button";
+import SoundsIcon from "./icons/SoundsIcon";
+import InfinityIcon from "./icons/InfinityIcon";
 
 interface HomeControlsProps {
   isPlaying: boolean;
@@ -94,17 +93,8 @@ export default function HomeControls({
           exiting={shouldAnimateHome ? shrinkToCenter("left") : undefined}
         >
           <Link href="/sounds" asChild>
-            <Button>
-              <View
-                style={{
-                  height: "100%",
-                  aspectRatio: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Ionicons name="grid-outline" size={20} color="white" />
-              </View>
+            <Button square>
+              <SoundsIcon />
             </Button>
           </Link>
         </Animated.View>
@@ -119,21 +109,11 @@ export default function HomeControls({
           entering={shouldAnimateHome ? growFromCenter("right") : undefined}
           exiting={shouldAnimateHome ? shrinkToCenter("right") : undefined}
         >
-          <Button onPress={() => console.log("Right button pressed")}>
-            <View
-              style={{
-                height: "100%",
-                aspectRatio: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Ionicons name="settings-outline" size={20} color="white" />
-            </View>
+          <Button square onPress={() => console.log("Right button pressed")}>
+            <InfinityIcon />
           </Button>
         </Animated.View>
       )}
     </View>
   );
 }
-

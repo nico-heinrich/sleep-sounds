@@ -1,13 +1,7 @@
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomActions from "../../components/BottomActions";
 import { sets } from "../../data/sets";
@@ -17,18 +11,8 @@ export default function SoundDetail() {
   const router = useRouter();
   const safeArea = useSafeAreaInsets();
 
-  const opacity = useSharedValue(0);
-
   const setIndex = parseInt(id || "0", 10);
   const set = sets[setIndex];
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 1000 });
-  }, []);
-
-  const contentStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
 
   if (!set) {
     return null;
@@ -46,7 +30,7 @@ export default function SoundDetail() {
             paddingBottom: safeArea.bottom + 100,
           }}
         >
-          <Animated.View style={contentStyle}>
+          <View>
             <Image
               source={set.image}
               contentFit="cover"
@@ -58,7 +42,7 @@ export default function SoundDetail() {
               }}
             />
 
-            <Animated.Text
+            <Text
               style={{
                 color: "white",
                 fontSize: 32,
@@ -68,9 +52,9 @@ export default function SoundDetail() {
               }}
             >
               {set.heading}
-            </Animated.Text>
+            </Text>
 
-            <Animated.Text
+            <Text
               style={{
                 color: "white",
                 fontSize: 18,
@@ -80,11 +64,11 @@ export default function SoundDetail() {
               }}
             >
               {set.body}
-            </Animated.Text>
-          </Animated.View>
+            </Text>
+          </View>
         </ScrollView>
 
-        <BottomActions onClose={() => router.back()} background />
+        <BottomActions onClose={() => router.back()} delay={400} background />
       </View>
     </View>
   );

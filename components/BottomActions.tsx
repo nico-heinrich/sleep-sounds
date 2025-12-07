@@ -1,5 +1,4 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { View } from "react-native";
 import Animated, {
   FadeInDown,
   FadeInLeft,
@@ -53,17 +52,8 @@ export default function BottomActions({
               .delay(delay)}
             style={{ position: "absolute", bottom: safeArea.bottom, left: 24 }}
           >
-            <Button onPress={onClose}>
-              <View
-                style={{
-                  height: "100%",
-                  aspectRatio: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <CloseIcon size={20} />
-              </View>
+            <Button square onPress={onClose}>
+              <CloseIcon />
             </Button>
           </Animated.View>
           <Animated.View
@@ -95,17 +85,8 @@ export default function BottomActions({
             alignItems: "center",
           }}
         >
-          <Button onPress={onClose}>
-            <View
-              style={{
-                height: "100%",
-                aspectRatio: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <CloseIcon size={20} />
-            </View>
+          <Button square onPress={onClose}>
+            <CloseIcon />
           </Button>
         </Animated.View>
       )}
